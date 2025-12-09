@@ -90,7 +90,8 @@ const ClientDashboard = () => {
                 ...product,
                 precioVenta: discountedPrice,
                 precioOriginal: product.precioVenta,
-                promoName: promo.nombre
+                promoName: promo.nombre,
+                promoId: promo.id
             };
         }
         return product;
@@ -132,11 +133,16 @@ const ClientDashboard = () => {
             observaciones: orderNotes || null,
             detalles: cart.map(item => {
                 const discountPerUnit = item.originalPrice ? (item.originalPrice - item.precio) : 0;
-                return {
+                const detalle = {
                     idProducto: item.id,
                     cantidad: item.quantity,
                     descuento: discountPerUnit * item.quantity
                 };
+                // Incluir ID de promoción si existe
+                if (item.promoId) {
+                    detalle.idPromocion = item.promoId;
+                }
+                return detalle;
             })
         };
 
@@ -353,7 +359,8 @@ const ClientDashboard = () => {
                                                                                 ...product,
                                                                                 nombre: product.nombreProducto,
                                                                                 precio: product.precioVenta,
-                                                                                originalPrice: product.precioOriginal
+                                                                                originalPrice: product.precioOriginal,
+                                                                                promoId: product.promoId
                                                                             })}
                                                                         >
                                                                             +

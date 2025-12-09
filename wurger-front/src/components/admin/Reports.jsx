@@ -30,9 +30,16 @@ ChartJS.register(
 const Reports = () => {
     const [sales, setSales] = useState([]);
     const [products, setProducts] = useState([]);
+    const getLocalDateString = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const [dateRange, setDateRange] = useState({
-        start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
+        start: getLocalDateString(new Date(new Date().setDate(new Date().getDate() - 30))),
+        end: getLocalDateString(new Date())
     });
 
     useEffect(() => {
@@ -61,7 +68,14 @@ const Reports = () => {
             if (!sale || !sale.fecha) return false;
             const saleDate = new Date(sale.fecha);
             if (isNaN(saleDate.getTime())) return false;
-            return saleDate >= new Date(dateRange.start) && saleDate <= new Date(dateRange.end);
+
+            const [startYear, startMonth, startDay] = dateRange.start.split('-').map(Number);
+            const startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+
+            const [endYear, endMonth, endDay] = dateRange.end.split('-').map(Number);
+            const endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+
+            return saleDate >= startDate && saleDate <= endDate;
         });
     };
 
@@ -534,28 +548,28 @@ const Reports = () => {
             </div>
 
             <div className="row mb-4 g-3">
-                <div className="col-md-3">
+                <div className="col-sm-6 col-xl-3">
                     <div className="glass-card h-100 p-4 text-white bg-primary bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
-                        <h6 className="mb-1 opacity-75">Total Ventas</h6>
-                        <h3 className="mb-0 fw-bold">{formatCOP(totalRevenue)}</h3>
+                        <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Total Ventas</h6>
+                        <h4 className="mb-0 fw-bold text-nowrap">{formatCOP(totalRevenue)}</h4>
                     </div>
                 </div>
-                <div className="col-md-3">
+                <div className="col-sm-6 col-xl-3">
                     <div className="glass-card h-100 p-4 text-white bg-success bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
-                        <h6 className="mb-1 opacity-75">Pedidos</h6>
-                        <h3 className="mb-0 fw-bold">{filteredSales.length}</h3>
+                        <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Pedidos</h6>
+                        <h4 className="mb-0 fw-bold">{filteredSales.length}</h4>
                     </div>
                 </div>
-                <div className="col-md-3">
+                <div className="col-sm-6 col-xl-3">
                     <div className="glass-card h-100 p-4 text-white bg-info bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
-                        <h6 className="mb-1 opacity-75">Productos</h6>
-                        <h3 className="mb-0 fw-bold">{products.length}</h3>
+                        <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Productos</h6>
+                        <h4 className="mb-0 fw-bold">{products.length}</h4>
                     </div>
                 </div>
-                <div className="col-md-3">
+                <div className="col-sm-6 col-xl-3">
                     <div className="glass-card h-100 p-4 text-white bg-warning bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
-                        <h6 className="mb-1 opacity-75">Promedio/Pedido</h6>
-                        <h3 className="mb-0 fw-bold">{formatCOP(filteredSales.length > 0 ? (totalRevenue / filteredSales.length) : 0)}</h3>
+                        <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Promedio/Pedido</h6>
+                        <h4 className="mb-0 fw-bold text-nowrap">{formatCOP(filteredSales.length > 0 ? (totalRevenue / filteredSales.length) : 0)}</h4>
                     </div>
                 </div>
             </div>

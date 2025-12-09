@@ -60,7 +60,8 @@ const ProductCard = ({ product }) => {
                                 ...product,
                                 nombre: product.nombreProducto,
                                 precio: product.precioVenta,
-                                originalPrice: product.precioOriginal
+                                originalPrice: product.precioOriginal,
+                                promoId: product.promoId
                             })}
                         >
                             <span>Agregar</span>

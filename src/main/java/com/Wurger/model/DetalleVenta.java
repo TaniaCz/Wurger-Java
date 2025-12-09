@@ -40,4 +40,11 @@ public class DetalleVenta {
     @JoinColumn(name = "id_producto", nullable = false)
     @NotFound(action = NotFoundAction.IGNORE)
     private Producto producto;
+
+    // Relación N:1 con Promocion (opcional)
+    // Permite rastrear qué promoción se aplicó a este detalle
+    @ManyToOne
+    @JoinColumn(name = "id_promocion")
+    @NotFound(action = NotFoundAction.IGNORE)
+    private Promocion promocion;
 }

@@ -25,8 +25,13 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private CategoriaProductoRepository categoriaRepository;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @Override
     public void run(String... args) throws Exception {
+        ejecutarMigraciones();
+
         // Crear categorías por defecto
         String[] categorias = { "Comida Rápida", "Bebidas", "Postres", "Acompañamientos" };
         for (String nombreCat : categorias) {
@@ -70,6 +75,32 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("✅ Usuario administrador creado: Wurger@admin.com");
         } else {
             System.out.println("ℹ️ Usuario administrador ya existe");
+        }
+    }
+
+    private void ejecutarMigraciones() {
+        try {
+            System.out.println("🔄 Verificando migraciones de base de datos...");
+
+            // Verificar si columna id_promocion existe en detalle_venta
+            Integer existeColumna = jdbcTemplate.queryForObject(
+                    "SELECT count(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'detalle_venta' AND COLUMN_NAME = 'id_promocion'",
+                    Integer.class);
+
+            if (existeColumna != null && existeColumna == 0) {
+                System.out.println("🛠️ Aplicando migración: Agregar id_promocion a detalle_venta");
+
+                jdbcTemplate.execute("ALTER TABLE detalle_venta ADD COLUMN id_promocion INT NULL");
+                jdbcTemplate.execute(
+                        "ALTER TABLE detalle_venta ADD CONSTRAINT fk_detalle_venta_promocion FOREIGN KEY (id_promocion) REFERENCES promocion(id_promocion) ON DELETE SET NULL ON UPDATE CASCADE");
+
+                System.out.println("✅ Migración exitosa: Columna id_promocion agregada.");
+            } else {
+                System.out.println("ℹ️ Base de datos ya está actualizada.");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error aplicando migraciones: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

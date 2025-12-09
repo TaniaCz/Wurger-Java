@@ -4,6 +4,7 @@ import com.Wurger.dto.DetalleVentaDTO;
 import com.Wurger.dto.VentaRequestDTO;
 import com.Wurger.model.*;
 import com.Wurger.repository.ProductoRepository;
+import com.Wurger.repository.PromocionRepository;
 import com.Wurger.repository.UsuarioRepository;
 import com.Wurger.repository.VentaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,12 +28,15 @@ public class VentaService {
     @Autowired
     private ProductoRepository productoRepository;
 
+    @Autowired
+    private PromocionRepository promocionRepository;
+
     @Transactional
     public Venta crearVenta(VentaRequestDTO ventaDTO) {
         // 1. Crear la Cabecera de Venta
         Venta venta = new Venta();
         venta.setFecha(LocalDateTime.now());
-        venta.setEstado(Venta.EstadoVenta.Pendiente); // O Pagada, según tu flujo
+        venta.setEstado(Venta.EstadoVenta.Pendiente);
 
         // Buscar Usuario
         Usuario usuario = usuarioRepository.findById(ventaDTO.getIdUsuario())
@@ -51,15 +55,15 @@ public class VentaService {
             Producto producto = productoRepository.findById(item.getIdProducto())
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado ID: " + item.getIdProducto()));
 
-            // A) Validar Stock (no descontar aún, se descuenta al completar)
+            // A) Validar Stock
             if (producto.getStock() < item.getCantidad()) {
-                throw new RuntimeException("Stock insuficiente para: " + producto.getNombreProducto());
+                throw new RuntimeException("Stock insuficiente para: " + producto.getNombreProducto() +
+                        " (Disponible: " + producto.getStock() + ", Solicitado: " + item.getCantidad() + ")");
             }
 
-            // B) NO descontar stock aquí - se descontará cuando el pedido se marque como
-            // "Completada"
-            // producto.setStock(producto.getStock() - item.getCantidad());
-            // productoRepository.save(producto);
+            // B) DESCONTAR STOCK INMEDIATAMENTE
+            producto.setStock(producto.getStock() - item.getCantidad());
+            productoRepository.save(producto);
 
             // C) Crear Detalle
             DetalleVenta detalle = new DetalleVenta();
@@ -73,8 +77,22 @@ public class VentaService {
             detalle.setDescuento(descuento);
             detalle.setSubtotal(subtotal.subtract(descuento));
 
+            // D) Rastrear Promoción si se aplicó
+            if (item.getIdPromocion() != null) {
+                Promocion promocion = promocionRepository.findById(item.getIdPromocion())
+                        .orElseThrow(
+                                () -> new RuntimeException("Promoción no encontrada ID: " + item.getIdPromocion()));
+
+                detalle.setPromocion(promocion);
+
+                // Incrementar contador de usos de la promoción
+                Integer usosActuales = promocion.getCantidadUsos() != null ? promocion.getCantidadUsos() : 0;
+                promocion.setCantidadUsos(usosActuales + item.getCantidad());
+                promocionRepository.save(promocion);
+            }
+
             // Relación Bidireccional
-            detalle.setVenta(venta); // Importante: Asignar el padre al hijo
+            detalle.setVenta(venta);
             detalle.setProducto(producto);
             detallesEntidad.add(detalle);
 
@@ -111,26 +129,32 @@ public class VentaService {
             throw new RuntimeException("Estado inválido: " + nuevoEstado);
         }
 
-        // Si cambia a Completada, descontar stock
-        if (estadoNuevo == Venta.EstadoVenta.Completada && estadoAnterior != Venta.EstadoVenta.Completada) {
+        // Si cambia a Cancelada, devolver el stock
+        if (estadoNuevo == Venta.EstadoVenta.Cancelada && estadoAnterior != Venta.EstadoVenta.Cancelada) {
             for (DetalleVenta detalle : venta.getDetalles()) {
                 Producto producto = detalle.getProducto();
 
-                // Validar que haya stock suficiente
                 if (producto == null) {
                     throw new RuntimeException("Producto no encontrado en el detalle de venta");
                 }
 
-                if (producto.getStock() < detalle.getCantidad()) {
-                    throw new RuntimeException("Stock insuficiente para completar el pedido. Producto: " +
-                            producto.getNombreProducto() + " (Stock disponible: " + producto.getStock() +
-                            ", Requerido: " + detalle.getCantidad() + ")");
-                }
-
-                // Descontar stock
-                producto.setStock(producto.getStock() - detalle.getCantidad());
+                // Devolver stock
+                producto.setStock(producto.getStock() + detalle.getCantidad());
                 productoRepository.save(producto);
+
+                // Decrementar contador de usos de promoción si se aplicó
+                if (detalle.getPromocion() != null) {
+                    Promocion promocion = detalle.getPromocion();
+                    Integer usosActuales = promocion.getCantidadUsos() != null ? promocion.getCantidadUsos() : 0;
+                    promocion.setCantidadUsos(Math.max(0, usosActuales - detalle.getCantidad()));
+                    promocionRepository.save(promocion);
+                }
             }
+        }
+
+        // Prevenir que se cancele una venta ya cancelada o que se vuelva a completar
+        if (estadoAnterior == Venta.EstadoVenta.Cancelada && estadoNuevo != Venta.EstadoVenta.Cancelada) {
+            throw new RuntimeException("No se puede cambiar el estado de una venta cancelada");
         }
 
         venta.setEstado(estadoNuevo);
