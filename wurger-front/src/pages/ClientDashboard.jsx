@@ -14,6 +14,8 @@ const ClientDashboard = () => {
     const [deliveryAddress, setDeliveryAddress] = useState('');
     const [orderNotes, setOrderNotes] = useState('');
     const [addressError, setAddressError] = useState('');
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
     const navigate = useNavigate();
     const { theme, toggleTheme } = useTheme();
@@ -63,12 +65,23 @@ const ClientDashboard = () => {
             const response = await fetch('http://localhost:8080/api/promociones');
             if (response.ok) {
                 const data = await response.json();
+                console.log('All promotions from API:', data);
+
                 const now = new Date();
                 const activePromos = data.filter(p => {
-                    const startDate = new Date(p.inicio);
-                    const endDate = new Date(p.fin);
-                    return p.estado === 'Activa' && now >= startDate && now <= endDate;
+                    // Parse dates - backend sends LocalDate as "YYYY-MM-DD"
+                    const startDate = new Date(p.inicio + 'T00:00:00');
+                    const endDate = new Date(p.fin + 'T23:59:59');
+
+                    const isActive = p.estado === 'Activa';
+                    const isInDateRange = now >= startDate && now <= endDate;
+
+                    console.log(`Promo "${p.nombre}": estado=${p.estado}, inicio=${p.inicio}, fin=${p.fin}, isActive=${isActive}, isInDateRange=${isInDateRange}`);
+
+                    return isActive && isInDateRange;
                 });
+
+                console.log('Filtered active promotions:', activePromos);
                 setPromotions(activePromos);
             }
         } catch (error) {

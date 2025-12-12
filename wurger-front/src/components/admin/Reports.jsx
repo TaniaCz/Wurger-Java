@@ -337,59 +337,94 @@ const Reports = () => {
     const bestSelling = getBestSellingProducts();
     const salesByStatus = getSalesByStatus();
 
-    // Chart configurations
-    const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    const textColor = isDarkMode ? '#fff' : '#000';
-    const gridColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    // Chart configurations - Enhanced with gradients and glow
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const textColor = isDarkMode ? '#f8f9fa' : '#2B2D42';
+    const gridColor = isDarkMode ? 'rgba(255,159,28,0.1)' : 'rgba(0,0,0,0.08)';
 
-    // Chart 1: Sales by Status (Doughnut)
+    // Chart 1: Sales by Status (Doughnut) - Enhanced
     const statusChartData = {
         labels: Object.keys(salesByStatus),
         datasets: [{
             data: Object.values(salesByStatus),
             backgroundColor: [
-                'rgba(40, 167, 69, 0.8)',   // Verde - Completada
-                'rgba(255, 193, 7, 0.8)',   // Amarillo - Pendiente
-                'rgba(23, 162, 184, 0.8)',  // Azul - En Proceso
-                'rgba(220, 53, 69, 0.8)'    // Rojo - Cancelada
+                'rgba(16, 185, 129, 0.85)',   // Verde - Completada
+                'rgba(245, 158, 11, 0.85)',   // Amarillo - Pendiente
+                'rgba(59, 130, 246, 0.85)',   // Azul - En Proceso
+                'rgba(239, 68, 68, 0.85)'     // Rojo - Cancelada
             ],
-            borderColor: [
-                'rgba(40, 167, 69, 1)',
-                'rgba(255, 193, 7, 1)',
-                'rgba(23, 162, 184, 1)',
-                'rgba(220, 53, 69, 1)'
+            borderColor: isDarkMode ? [
+                'rgba(16, 185, 129, 1)',
+                'rgba(245, 158, 11, 1)',
+                'rgba(59, 130, 246, 1)',
+                'rgba(239, 68, 68, 1)'
+            ] : [
+                'rgba(16, 185, 129, 1)',
+                'rgba(245, 158, 11, 1)',
+                'rgba(59, 130, 246, 1)',
+                'rgba(239, 68, 68, 1)'
             ],
-            borderWidth: 2
+            borderWidth: 3,
+            hoverOffset: 15,
+            hoverBorderWidth: 4
         }]
     };
 
     const statusChartOptions = {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+            animateRotate: true,
+            animateScale: true,
+            duration: 1500,
+            easing: 'easeInOutQuart'
+        },
         plugins: {
             legend: {
                 position: 'bottom',
-                labels: { color: textColor, padding: 15, font: { size: 12 } }
+                labels: {
+                    color: textColor,
+                    padding: 20,
+                    font: { size: 13, weight: '600', family: 'Outfit' },
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
             },
             title: {
                 display: true,
                 text: 'Distribución de Pedidos por Estado',
                 color: textColor,
-                font: { size: 16, weight: 'bold' }
+                font: { size: 18, weight: 'bold', family: 'Outfit' },
+                padding: { bottom: 20 }
+            },
+            tooltip: {
+                backgroundColor: isDarkMode ? 'rgba(20, 25, 35, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                titleColor: textColor,
+                bodyColor: textColor,
+                borderColor: isDarkMode ? 'rgba(255, 159, 28, 0.3)' : 'rgba(0, 0, 0, 0.1)',
+                borderWidth: 2,
+                padding: 12,
+                boxShadow: isDarkMode ? '0 0 20px rgba(255, 159, 28, 0.3)' : '0 4px 12px rgba(0,0,0,0.1)',
+                titleFont: { size: 14, weight: 'bold' },
+                bodyFont: { size: 13 }
             }
         }
     };
 
-    // Chart 2: Best Selling Products (Bar)
+    // Chart 2: Best Selling Products (Bar) - Enhanced with gradient
     const productsChartData = {
         labels: bestSelling.map(p => p.name),
         datasets: [{
             label: 'Cantidad Vendida',
             data: bestSelling.map(p => p.quantity),
-            backgroundColor: 'rgba(244, 123, 32, 0.8)',
-            borderColor: 'rgba(244, 123, 32, 1)',
+            backgroundColor: isDarkMode
+                ? 'rgba(255, 159, 28, 0.85)'
+                : 'rgba(255, 159, 28, 0.75)',
+            borderColor: 'rgba(255, 159, 28, 1)',
             borderWidth: 2,
-            borderRadius: 8
+            borderRadius: 10,
+            hoverBackgroundColor: 'rgba(255, 159, 28, 1)',
+            hoverBorderWidth: 3
         }]
     };
 
@@ -397,28 +432,54 @@ const Reports = () => {
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+            duration: 1500,
+            easing: 'easeInOutQuart'
+        },
         plugins: {
             legend: { display: false },
             title: {
                 display: true,
                 text: 'Top 5 Productos Más Vendidos',
                 color: textColor,
-                font: { size: 16, weight: 'bold' }
+                font: { size: 18, weight: 'bold', family: 'Outfit' },
+                padding: { bottom: 20 }
+            },
+            tooltip: {
+                backgroundColor: isDarkMode ? 'rgba(20, 25, 35, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                titleColor: textColor,
+                bodyColor: textColor,
+                borderColor: isDarkMode ? 'rgba(255, 159, 28, 0.3)' : 'rgba(0, 0, 0, 0.1)',
+                borderWidth: 2,
+                padding: 12,
+                titleFont: { size: 14, weight: 'bold' },
+                bodyFont: { size: 13 }
             }
         },
         scales: {
             x: {
-                ticks: { color: textColor },
-                grid: { color: gridColor }
+                ticks: {
+                    color: textColor,
+                    font: { size: 12, weight: '500' }
+                },
+                grid: {
+                    color: gridColor,
+                    drawBorder: false
+                },
+                border: { display: false }
             },
             y: {
-                ticks: { color: textColor },
-                grid: { display: false }
+                ticks: {
+                    color: textColor,
+                    font: { size: 12, weight: '600' }
+                },
+                grid: { display: false },
+                border: { display: false }
             }
         }
     };
 
-    // Chart 3: Sales Trend (Line) - Last 6 months
+    // Chart 3: Sales Trend (Line) - Enhanced with gradient fill
     const getSalesTrend = () => {
         const monthlyData = {};
         const months = [];
@@ -457,30 +518,64 @@ const Reports = () => {
             label: 'Ventas (COP)',
             data: trendData.values,
             fill: true,
-            backgroundColor: 'rgba(244, 123, 32, 0.2)',
-            borderColor: 'rgba(244, 123, 32, 1)',
+            backgroundColor: (context) => {
+                const ctx = context.chart.ctx;
+                const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+                if (isDarkMode) {
+                    gradient.addColorStop(0, 'rgba(255, 159, 28, 0.4)');
+                    gradient.addColorStop(1, 'rgba(255, 159, 28, 0.05)');
+                } else {
+                    gradient.addColorStop(0, 'rgba(255, 159, 28, 0.3)');
+                    gradient.addColorStop(1, 'rgba(255, 159, 28, 0.02)');
+                }
+                return gradient;
+            },
+            borderColor: 'rgba(255, 159, 28, 1)',
             borderWidth: 3,
             tension: 0.4,
-            pointBackgroundColor: 'rgba(244, 123, 32, 1)',
+            pointBackgroundColor: 'rgba(255, 159, 28, 1)',
             pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            pointRadius: 5,
-            pointHoverRadius: 7
+            pointBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 9,
+            pointHoverBackgroundColor: 'rgba(255, 159, 28, 1)',
+            pointHoverBorderWidth: 4,
+            shadowOffsetX: 0,
+            shadowOffsetY: 4,
+            shadowBlur: 10,
+            shadowColor: isDarkMode ? 'rgba(255, 159, 28, 0.5)' : 'rgba(0, 0, 0, 0.2)'
         }]
     };
 
     const trendChartOptions = {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+            duration: 1500,
+            easing: 'easeInOutQuart'
+        },
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
         plugins: {
             legend: { display: false },
             title: {
                 display: true,
                 text: 'Tendencia de Ventas (Últimos 6 Meses)',
                 color: textColor,
-                font: { size: 16, weight: 'bold' }
+                font: { size: 18, weight: 'bold', family: 'Outfit' },
+                padding: { bottom: 20 }
             },
             tooltip: {
+                backgroundColor: isDarkMode ? 'rgba(20, 25, 35, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                titleColor: textColor,
+                bodyColor: textColor,
+                borderColor: isDarkMode ? 'rgba(255, 159, 28, 0.3)' : 'rgba(0, 0, 0, 0.1)',
+                borderWidth: 2,
+                padding: 12,
+                titleFont: { size: 14, weight: 'bold' },
+                bodyFont: { size: 13 },
                 callbacks: {
                     label: (context) => `Ventas: ${formatCOP(context.parsed.y)}`
                 }
@@ -488,15 +583,27 @@ const Reports = () => {
         },
         scales: {
             x: {
-                ticks: { color: textColor },
-                grid: { color: gridColor }
+                ticks: {
+                    color: textColor,
+                    font: { size: 12, weight: '500' }
+                },
+                grid: {
+                    color: gridColor,
+                    drawBorder: false
+                },
+                border: { display: false }
             },
             y: {
                 ticks: {
                     color: textColor,
+                    font: { size: 12, weight: '500' },
                     callback: (value) => formatCOP(value)
                 },
-                grid: { color: gridColor }
+                grid: {
+                    color: gridColor,
+                    drawBorder: false
+                },
+                border: { display: false }
             }
         }
     };

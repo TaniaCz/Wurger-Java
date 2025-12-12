@@ -5,6 +5,7 @@ const PromotionsManagement = () => {
     const [products, setProducts] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [editingPromo, setEditingPromo] = useState(null);
+    const [errors, setErrors] = useState({});
     const [formData, setFormData] = useState({
         nombre: '',
         descripcion: '',
@@ -12,8 +13,8 @@ const PromotionsManagement = () => {
         fin: '',
         cantidadUsos: 0,
         estado: 'Activa',
-        descuento: 0,
-        tipoDescuento: 'PORCENTAJE', // PORCENTAJE o FIJO
+        descuento: '',
+        tipoDescuento: 'PORCENTAJE',
         idProducto: ''
     });
 
@@ -46,8 +47,97 @@ const PromotionsManagement = () => {
         }
     };
 
+    // Get today's date in YYYY-MM-DD format
+    const getTodayDate = () => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    };
+
+    // Validate name (no numbers allowed)
+    const validateName = (name) => {
+        if (!name || name.trim() === '') {
+            return 'El nombre es obligatorio';
+        }
+        if (/\d/.test(name)) {
+            return 'El nombre no puede contener números';
+        }
+        if (name.length < 3) {
+            return 'El nombre debe tener al menos 3 caracteres';
+        }
+        if (name.length > 100) {
+            return 'El nombre no puede exceder 100 caracteres';
+        }
+        return '';
+    };
+
+    // Validate discount value
+    const validateDiscount = (value, type) => {
+        if (value === '' || value === null || value === undefined) {
+            return 'El valor del descuento es obligatorio';
+        }
+        const numValue = typeof value === 'string' ? parseFloat(value) : value;
+        if (isNaN(numValue) || numValue <= 0) {
+            return 'El descuento debe ser mayor a 0';
+        }
+        if (type === 'PORCENTAJE' && numValue > 100) {
+            return 'El porcentaje no puede ser mayor a 100%';
+        }
+        return '';
+    };
+
+    // Validate dates
+    const validateDates = (inicio, fin) => {
+        const errors = {};
+        const today = getTodayDate();
+
+        if (!inicio) {
+            errors.inicio = 'La fecha de inicio es obligatoria';
+        } else if (inicio < today) {
+            errors.inicio = 'La fecha de inicio no puede ser anterior a hoy';
+        }
+
+        if (!fin) {
+            errors.fin = 'La fecha de fin es obligatoria';
+        } else if (fin < today) {
+            errors.fin = 'La fecha de fin no puede ser anterior a hoy';
+        } else if (inicio && fin < inicio) {
+            errors.fin = 'La fecha de fin debe ser posterior o igual a la fecha de inicio';
+        }
+
+        return errors;
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+
+        // Validate name
+        const nameError = validateName(formData.nombre);
+        if (nameError) newErrors.nombre = nameError;
+
+        // Validate product
+        if (!formData.idProducto) {
+            newErrors.idProducto = 'Debe seleccionar un producto';
+        }
+
+        // Validate discount
+        const discountError = validateDiscount(formData.descuento, formData.tipoDescuento);
+        if (discountError) newErrors.descuento = discountError;
+
+        // Validate dates
+        const dateErrors = validateDates(formData.inicio, formData.fin);
+        Object.assign(newErrors, dateErrors);
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            return;
+        }
+
         const url = editingPromo
             ? `http://localhost:8080/api/promociones/${editingPromo.id}`
             : 'http://localhost:8080/api/promociones';
@@ -55,21 +145,30 @@ const PromotionsManagement = () => {
         const method = editingPromo ? 'PUT' : 'POST';
 
         try {
+            // Convert descuento to number before sending
+            const payload = {
+                ...formData,
+                descuento: parseFloat(formData.descuento) || 0
+            };
+
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {
                 fetchPromotions();
                 setShowModal(false);
                 resetForm();
+                alert('Promoción guardada exitosamente');
             } else {
-                alert('Error al guardar la promoción');
+                const errorText = await response.text();
+                alert('Error al guardar la promoción: ' + errorText);
             }
         } catch (error) {
             console.error('Error saving promotion:', error);
+            alert('Error de conexión al guardar la promoción');
         }
     };
 
@@ -83,6 +182,7 @@ const PromotionsManagement = () => {
 
             if (response.ok) {
                 fetchPromotions();
+                alert('Promoción eliminada exitosamente');
             } else {
                 alert('Error al eliminar la promoción');
             }
@@ -99,11 +199,12 @@ const PromotionsManagement = () => {
             fin: '',
             cantidadUsos: 0,
             estado: 'Activa',
-            descuento: 0,
+            descuento: '',
             tipoDescuento: 'PORCENTAJE',
             idProducto: ''
         });
         setEditingPromo(null);
+        setErrors({});
     };
 
     const handleEdit = (promo) => {
@@ -119,7 +220,16 @@ const PromotionsManagement = () => {
             tipoDescuento: promo.tipoDescuento || 'PORCENTAJE',
             idProducto: promo.producto?.id || ''
         });
+        setErrors({});
         setShowModal(true);
+    };
+
+    const handleFieldChange = (field, value) => {
+        setFormData({ ...formData, [field]: value });
+        // Clear error for this field when user starts typing
+        if (errors[field]) {
+            setErrors({ ...errors, [field]: '' });
+        }
     };
 
     const formatCOP = (value) => {
@@ -215,13 +325,14 @@ const PromotionsManagement = () => {
                 </div>
             </div>
 
-            {/* Modal */}
+            {/* Compact Modal - No Scroll Required */}
             {showModal && (
                 <>
-                    <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
-                        <div className="modal-dialog modal-lg modal-dialog-centered">
+                    <div className="modal-backdrop fade show"></div>
+                    <div className="modal fade show d-block" tabIndex="-1" aria-modal="true" role="dialog">
+                        <div className="modal-dialog modal-dialog-centered modal-lg">
                             <div className="modal-content glass-panel border-0 shadow-lg">
-                                <div className="modal-header border-bottom border-secondary-subtle">
+                                <div className="modal-header border-bottom border-secondary-subtle py-3">
                                     <h5 className="modal-title fw-bold">
                                         {editingPromo ? 'Editar Promoción' : 'Nueva Promoción'}
                                     </h5>
@@ -232,25 +343,31 @@ const PromotionsManagement = () => {
                                     ></button>
                                 </div>
                                 <form onSubmit={handleSubmit}>
-                                    <div className="modal-body p-4">
-                                        <div className="row g-3">
+                                    <div className="modal-body py-3 px-4">
+                                        <div className="row g-2">
+                                            {/* Row 1: Nombre y Producto */}
                                             <div className="col-md-6">
-                                                <label className="form-label small text-muted">Nombre</label>
+                                                <label className="form-label small text-muted mb-1">
+                                                    Nombre <span className="text-danger">*</span>
+                                                </label>
                                                 <input
                                                     type="text"
-                                                    className="form-control"
-                                                    required
+                                                    className={`form-control form-control-sm ${errors.nombre ? 'is-invalid' : ''}`}
                                                     value={formData.nombre}
-                                                    onChange={e => setFormData({ ...formData, nombre: e.target.value })}
+                                                    onChange={e => handleFieldChange('nombre', e.target.value)}
+                                                    placeholder="Ej: Promo Verano 2024"
                                                 />
+                                                {errors.nombre && <div className="invalid-feedback small">{errors.nombre}</div>}
                                             </div>
+
                                             <div className="col-md-6">
-                                                <label className="form-label small text-muted">Producto</label>
+                                                <label className="form-label small text-muted mb-1">
+                                                    Producto <span className="text-danger">*</span>
+                                                </label>
                                                 <select
-                                                    className="form-select"
-                                                    required
+                                                    className={`form-select form-select-sm ${errors.idProducto ? 'is-invalid' : ''}`}
                                                     value={formData.idProducto}
-                                                    onChange={e => setFormData({ ...formData, idProducto: e.target.value })}
+                                                    onChange={e => handleFieldChange('idProducto', e.target.value)}
                                                 >
                                                     <option value="">Seleccionar producto...</option>
                                                     {products.map(p => (
@@ -259,64 +376,91 @@ const PromotionsManagement = () => {
                                                         </option>
                                                     ))}
                                                 </select>
+                                                {errors.idProducto && <div className="invalid-feedback small">{errors.idProducto}</div>}
                                             </div>
+
+                                            {/* Row 2: Tipo Descuento y Valor */}
                                             <div className="col-md-6">
-                                                <label className="form-label small text-muted">Tipo Descuento</label>
+                                                <label className="form-label small text-muted mb-1">
+                                                    Tipo Descuento <span className="text-danger">*</span>
+                                                </label>
                                                 <select
-                                                    className="form-select"
+                                                    className="form-select form-select-sm"
                                                     value={formData.tipoDescuento}
-                                                    onChange={e => setFormData({ ...formData, tipoDescuento: e.target.value })}
+                                                    onChange={e => handleFieldChange('tipoDescuento', e.target.value)}
                                                 >
                                                     <option value="PORCENTAJE">Porcentaje (%)</option>
                                                     <option value="FIJO">Monto Fijo ($)</option>
                                                 </select>
                                             </div>
+
                                             <div className="col-md-6">
-                                                <label className="form-label small text-muted">Valor Descuento</label>
+                                                <label className="form-label small text-muted mb-1">
+                                                    Valor Descuento <span className="text-danger">*</span>
+                                                </label>
                                                 <input
                                                     type="number"
-                                                    className="form-control"
-                                                    required
+                                                    className={`form-control form-control-sm ${errors.descuento ? 'is-invalid' : ''}`}
                                                     min="0"
+                                                    step={formData.tipoDescuento === 'PORCENTAJE' ? '1' : '100'}
+                                                    max={formData.tipoDescuento === 'PORCENTAJE' ? '100' : undefined}
                                                     value={formData.descuento}
-                                                    onChange={e => setFormData({ ...formData, descuento: parseFloat(e.target.value) })}
+                                                    onChange={e => handleFieldChange('descuento', e.target.value)}
+                                                    placeholder={formData.tipoDescuento === 'PORCENTAJE' ? '20' : '5000'}
                                                 />
+                                                {errors.descuento && <div className="invalid-feedback small">{errors.descuento}</div>}
                                             </div>
+
+                                            {/* Row 3: Fechas */}
                                             <div className="col-md-6">
-                                                <label className="form-label small text-muted">Fecha Inicio</label>
+                                                <label className="form-label small text-muted mb-1">
+                                                    Fecha Inicio <span className="text-danger">*</span>
+                                                </label>
                                                 <input
                                                     type="date"
-                                                    className="form-control"
-                                                    required
+                                                    className={`form-control form-control-sm ${errors.inicio ? 'is-invalid' : ''}`}
+                                                    min={getTodayDate()}
                                                     value={formData.inicio}
-                                                    onChange={e => setFormData({ ...formData, inicio: e.target.value })}
+                                                    onChange={e => handleFieldChange('inicio', e.target.value)}
                                                 />
+                                                {errors.inicio && <div className="invalid-feedback small">{errors.inicio}</div>}
                                             </div>
+
                                             <div className="col-md-6">
-                                                <label className="form-label small text-muted">Fecha Fin</label>
+                                                <label className="form-label small text-muted mb-1">
+                                                    Fecha Fin <span className="text-danger">*</span>
+                                                </label>
                                                 <input
                                                     type="date"
-                                                    className="form-control"
-                                                    required
+                                                    className={`form-control form-control-sm ${errors.fin ? 'is-invalid' : ''}`}
+                                                    min={formData.inicio || getTodayDate()}
                                                     value={formData.fin}
-                                                    onChange={e => setFormData({ ...formData, fin: e.target.value })}
+                                                    onChange={e => handleFieldChange('fin', e.target.value)}
                                                 />
+                                                {errors.fin && <div className="invalid-feedback small">{errors.fin}</div>}
                                             </div>
+
+                                            {/* Row 4: Descripción */}
                                             <div className="col-12">
-                                                <label className="form-label small text-muted">Descripción</label>
+                                                <label className="form-label small text-muted mb-1">Descripción</label>
                                                 <textarea
-                                                    className="form-control"
+                                                    className="form-control form-control-sm"
                                                     rows="2"
                                                     value={formData.descripcion}
-                                                    onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
+                                                    onChange={e => handleFieldChange('descripcion', e.target.value)}
+                                                    placeholder="Descripción opcional"
+                                                    maxLength="255"
                                                 ></textarea>
+                                                <small className="text-muted" style={{ fontSize: '0.7rem' }}>{formData.descripcion.length}/255</small>
                                             </div>
+
+                                            {/* Row 5: Estado */}
                                             <div className="col-md-6">
-                                                <label className="form-label small text-muted">Estado</label>
+                                                <label className="form-label small text-muted mb-1">Estado</label>
                                                 <select
-                                                    className="form-select"
+                                                    className="form-select form-select-sm"
                                                     value={formData.estado}
-                                                    onChange={e => setFormData({ ...formData, estado: e.target.value })}
+                                                    onChange={e => handleFieldChange('estado', e.target.value)}
                                                 >
                                                     <option value="Activa">Activa</option>
                                                     <option value="Inactiva">Inactiva</option>
@@ -324,15 +468,16 @@ const PromotionsManagement = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="modal-footer border-top border-secondary-subtle">
+                                    <div className="modal-footer border-top border-secondary-subtle py-2">
                                         <button
                                             type="button"
-                                            className="btn btn-secondary"
+                                            className="btn btn-secondary btn-sm"
                                             onClick={() => setShowModal(false)}
                                         >
                                             Cancelar
                                         </button>
-                                        <button type="submit" className="btn btn-primary px-4">
+                                        <button type="submit" className="btn btn-primary btn-sm px-4">
+                                            <i className="bi bi-check-lg me-1"></i>
                                             Guardar
                                         </button>
                                     </div>
@@ -340,7 +485,6 @@ const PromotionsManagement = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="modal-backdrop fade show" style={{ backdropFilter: 'blur(5px)' }}></div>
                 </>
             )}
         </div>
