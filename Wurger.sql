@@ -144,4 +144,4 @@ CREATE TABLE promocion (
     FOREIGN KEY (id_producto) REFERENCES producto(id_producto)
 );
 
-INSERT INTO usuario (email, password, rol) VALUES ('Wurger@admin.com', '123456789', 'Administrador');
+INSERT INTO usuario (email, password, rol) VALUES ('Wurger@admin.com', '$2a$10$X0zoiei0Q6fBXZRHlWGpQ.ux8gypV6BEAQLvriv6rYIdsgt8Sm/gi', 'Administrador');
