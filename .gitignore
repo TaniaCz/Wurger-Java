@@ -51,13 +51,13 @@ yarn-error.log
 /.fleet
 
 ### Security & Sensitive Files ###
-**/application.properties
-**/application-*.properties
-*.env
-.env
-.env.*
-.env.backup
-.env.production
+# **/application.properties
+# **/application-*.properties
+# *.env
+# .env
+# .env.*
+# .env.backup
+# .env.production
 
 ### Database Backups ###
 *.sql.backup
