@@ -7,6 +7,7 @@ import com.Wurger.repository.ProductoRepository;
 import com.Wurger.repository.PromocionRepository;
 import com.Wurger.repository.UsuarioRepository;
 import com.Wurger.repository.VentaRepository;
+import com.Wurger.repository.FormaPagoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,9 @@ public class VentaService {
     @Autowired
     private PromocionRepository promocionRepository;
 
+    @Autowired
+    private FormaPagoRepository formaPagoRepository;
+
     @Transactional
     public Venta crearVenta(VentaRequestDTO ventaDTO) {
         // 1. Crear la Cabecera de Venta
@@ -46,6 +50,7 @@ public class VentaService {
         // Guardar dirección y observaciones
         venta.setDireccion(ventaDTO.getDireccion());
         venta.setObservaciones(ventaDTO.getObservaciones());
+        venta.setIdCajaSesion(ventaDTO.getIdCajaSesion());
 
         // 2. Procesar Detalles
         BigDecimal totalVenta = BigDecimal.ZERO;
@@ -104,7 +109,16 @@ public class VentaService {
         venta.setTotalVenta(totalVenta);
 
         // 3. Guardar Todo (Cascada guarda los detalles)
-        return ventaRepository.save(venta);
+        Venta savedVenta = ventaRepository.save(venta);
+
+        if (ventaDTO.getFormaPago() != null && !ventaDTO.getFormaPago().trim().isEmpty()) {
+            FormaPago fp = new FormaPago();
+            fp.setNombre(ventaDTO.getFormaPago());
+            fp.setVenta(savedVenta);
+            formaPagoRepository.save(fp);
+        }
+
+        return savedVenta;
     }
 
     public List<Venta> findAll() {

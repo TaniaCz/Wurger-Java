@@ -22,6 +22,44 @@ const ProductManagement = () => {
     const [filterCategory, setFilterCategory] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [filterStock, setFilterStock] = useState('');
+    const [uploading, setUploading] = useState(false);
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const uploadData = new FormData();
+        uploadData.append('file', file);
+
+        setUploading(true);
+        try {
+            const response = await fetch('http://localhost:8080/api/upload', {
+                method: 'POST',
+                body: uploadData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setFormData(prev => ({ ...prev, imagen: data.url }));
+            } else {
+                let errorMsg = 'Error desconocido';
+                try {
+                    const error = await response.json();
+                    errorMsg = error.error || errorMsg;
+                } catch (err) {
+                    try {
+                        errorMsg = await response.text();
+                    } catch (txtErr) {}
+                }
+                alert('Error al subir imagen: ' + errorMsg);
+            }
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            alert('Error al conectar con el servidor de subida');
+        } finally {
+            setUploading(false);
+        }
+    };
 
     useEffect(() => {
         fetchProducts();
@@ -277,14 +315,52 @@ const ProductManagement = () => {
                                 </select>
                             </div>
                             <div className="col-md-6">
-                                <label className="form-label small text-muted">URL de Imagen</label>
-                                <input
-                                    type="url"
-                                    className="form-control"
-                                    value={formData.imagen}
-                                    onChange={(e) => setFormData({ ...formData, imagen: e.target.value })}
-                                    placeholder="https://ejemplo.com/imagen.jpg"
-                                />
+                                <label className="form-label small text-muted">Imagen del Producto</label>
+                                <div className="d-flex flex-column gap-2">
+                                    <div className="input-group">
+                                        <input
+                                            type="file"
+                                            className="form-control"
+                                            accept="image/*"
+                                            onChange={handleFileUpload}
+                                            disabled={uploading}
+                                        />
+                                        {uploading && (
+                                            <span className="input-group-text">
+                                                <span className="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="input-group">
+                                        <span className="input-group-text bg-light text-muted small">URL</span>
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm"
+                                            value={formData.imagen}
+                                            onChange={(e) => setFormData({ ...formData, imagen: e.target.value })}
+                                            placeholder="O ingresa la URL de la imagen..."
+                                        />
+                                    </div>
+                                    {formData.imagen && (
+                                        <div className="position-relative mt-1 border rounded-3 p-1 bg-light d-inline-block" style={{ maxWidth: '120px' }}>
+                                            <img 
+                                                src={formData.imagen} 
+                                                alt="Preview" 
+                                                className="img-thumbnail object-fit-cover w-100" 
+                                                style={{ height: '80px' }}
+                                                onError={(e) => { e.target.src = 'https://placehold.co/120x80?text=Error'; }}
+                                            />
+                                            <button 
+                                                type="button" 
+                                                className="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle p-1 d-flex align-items-center justify-content-center" 
+                                                style={{ width: '20px', height: '20px', fontSize: '10px' }}
+                                                onClick={() => setFormData({ ...formData, imagen: '' })}
+                                            >
+                                                <i className="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label small text-muted">Estado *</label>

@@ -30,6 +30,7 @@ ChartJS.register(
 const Reports = () => {
     const [sales, setSales] = useState([]);
     const [products, setProducts] = useState([]);
+    const [expenses, setExpenses] = useState([]);
     const getLocalDateString = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -48,15 +49,18 @@ const Reports = () => {
 
     const fetchData = async () => {
         try {
-            const [salesRes, productsRes] = await Promise.all([
+            const [salesRes, productsRes, expensesRes] = await Promise.all([
                 fetch('http://localhost:8080/api/ventas'),
-                fetch('http://localhost:8080/api/productos')
+                fetch('http://localhost:8080/api/productos'),
+                fetch('http://localhost:8080/api/gastos')
             ]);
             const salesData = await salesRes.json();
             const productsData = await productsRes.json();
+            const expensesData = await expensesRes.json();
 
             setSales(salesData);
             setProducts(productsData);
+            setExpenses(expensesData);
         } catch (error) {
             console.error('Error fetching data:', error);
         }
@@ -77,6 +81,30 @@ const Reports = () => {
 
             return saleDate >= startDate && saleDate <= endDate;
         });
+    };
+
+    const getFilteredExpenses = () => {
+        if (!Array.isArray(expenses)) return [];
+        return expenses.filter(expense => {
+            if (!expense || !expense.fecha) return false;
+            const expDate = new Date(expense.fecha + 'T00:00:00');
+            if (isNaN(expDate.getTime())) return false;
+
+            const [startYear, startMonth, startDay] = dateRange.start.split('-').map(Number);
+            const startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+
+            const [endYear, endMonth, endDay] = dateRange.end.split('-').map(Number);
+            const endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+
+            return expDate >= startDate && expDate <= endDate;
+        });
+    };
+
+    const getTotalExpenses = () => {
+        return getFilteredExpenses().reduce((sum, expense) => {
+            const val = parseFloat(expense.monto);
+            return sum + (isNaN(val) ? 0 : val);
+        }, 0);
     };
 
     const getTotalRevenue = () => {
@@ -157,18 +185,20 @@ const Reports = () => {
             doc.text(`Período: ${dateRange.start} a ${dateRange.end}`, 15, 35);
 
             doc.setFillColor(245, 245, 245);
-            doc.rect(15, 45, 180, 20, 'F');
-            doc.setFontSize(13);
+            doc.rect(15, 45, 180, 32, 'F');
+            doc.setFontSize(11);
             doc.setTextColor(40, 40, 40);
-            doc.text(`Total Ventas: ${formatCOP(getTotalRevenue())}`, 20, 54);
-            doc.text(`Número de Ventas: ${getFilteredSales().length}`, 20, 61);
+            doc.text(`Total Ventas: ${formatCOP(getTotalRevenue())}`, 20, 52);
+            doc.text(`Total Gastos: ${formatCOP(getTotalExpenses())}`, 20, 58);
+            doc.text(`Utilidad Neta: ${formatCOP(getTotalRevenue() - getTotalExpenses())}`, 20, 64);
+            doc.text(`Número de Pedidos: ${getFilteredSales().length}`, 20, 70);
 
             doc.setFontSize(16);
             doc.setTextColor(244, 123, 32);
-            doc.text('Productos Más Vendidos', 15, 75);
+            doc.text('Productos Más Vendidos', 15, 84);
 
             autoTable(doc, {
-                startY: 80,
+                startY: 89,
                 head: [['Producto', 'Cantidad Vendida', 'Ingresos']],
                 body: getBestSellingProducts().map(p => [
                     p.name,
@@ -263,23 +293,32 @@ const Reports = () => {
             worksheet.getCell('A9').value = 'Total Ventas:';
             worksheet.getCell('A9').font = { bold: true };
             worksheet.getCell('B9').value = formatCOP(getTotalRevenue());
-            worksheet.getCell('A10').value = 'Número de Ventas:';
+
+            worksheet.getCell('A10').value = 'Total Gastos:';
             worksheet.getCell('A10').font = { bold: true };
-            worksheet.getCell('B10').value = getFilteredSales().length;
+            worksheet.getCell('B10').value = formatCOP(getTotalExpenses());
 
-            worksheet.getCell('A12').value = 'Productos Más Vendidos';
-            worksheet.getCell('A12').font = { size: 14, bold: true, color: { argb: 'FFF47B20' } };
+            worksheet.getCell('A11').value = 'Utilidad Neta:';
+            worksheet.getCell('A11').font = { bold: true };
+            worksheet.getCell('B11').value = formatCOP(getTotalRevenue() - getTotalExpenses());
 
-            worksheet.getRow(13).values = ['Producto', 'Cantidad', 'Ingresos'];
-            worksheet.getRow(13).font = { bold: true };
-            worksheet.getRow(13).fill = {
+            worksheet.getCell('A12').value = 'Número de Pedidos:';
+            worksheet.getCell('A12').font = { bold: true };
+            worksheet.getCell('B12').value = getFilteredSales().length;
+
+            worksheet.getCell('A14').value = 'Productos Más Vendidos';
+            worksheet.getCell('A14').font = { size: 14, bold: true, color: { argb: 'FFF47B20' } };
+
+            worksheet.getRow(15).values = ['Producto', 'Cantidad', 'Ingresos'];
+            worksheet.getRow(15).font = { bold: true };
+            worksheet.getRow(15).fill = {
                 type: 'pattern',
                 pattern: 'solid',
                 fgColor: { argb: 'FFF47B20' }
             };
-            worksheet.getRow(13).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            worksheet.getRow(15).font = { bold: true, color: { argb: 'FFFFFFFF' } };
 
-            let currentRow = 14;
+            let currentRow = 16;
             getBestSellingProducts().forEach(p => {
                 worksheet.getRow(currentRow).values = [p.name, p.quantity, formatCOP(p.revenue)];
                 currentRow++;
@@ -655,25 +694,31 @@ const Reports = () => {
             </div>
 
             <div className="row mb-4 g-3">
-                <div className="col-sm-6 col-xl-3">
+                <div className="col-sm-6 col-xl">
                     <div className="glass-card h-100 p-4 text-white bg-primary bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
                         <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Total Ventas</h6>
                         <h4 className="mb-0 fw-bold text-nowrap">{formatCOP(totalRevenue)}</h4>
                     </div>
                 </div>
-                <div className="col-sm-6 col-xl-3">
+                <div className="col-sm-6 col-xl">
+                    <div className="glass-card h-100 p-4 text-white bg-danger bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
+                        <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Total Gastos</h6>
+                        <h4 className="mb-0 fw-bold text-nowrap">{formatCOP(getTotalExpenses())}</h4>
+                    </div>
+                </div>
+                <div className="col-sm-6 col-xl">
                     <div className="glass-card h-100 p-4 text-white bg-success bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
+                        <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Utilidad Neta</h6>
+                        <h4 className="mb-0 fw-bold text-nowrap">{formatCOP(totalRevenue - getTotalExpenses())}</h4>
+                    </div>
+                </div>
+                <div className="col-sm-6 col-xl">
+                    <div className="glass-card h-100 p-4 text-white bg-info bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
                         <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Pedidos</h6>
                         <h4 className="mb-0 fw-bold">{filteredSales.length}</h4>
                     </div>
                 </div>
-                <div className="col-sm-6 col-xl-3">
-                    <div className="glass-card h-100 p-4 text-white bg-info bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
-                        <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Productos</h6>
-                        <h4 className="mb-0 fw-bold">{products.length}</h4>
-                    </div>
-                </div>
-                <div className="col-sm-6 col-xl-3">
+                <div className="col-sm-6 col-xl">
                     <div className="glass-card h-100 p-4 text-white bg-warning bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
                         <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Promedio/Pedido</h6>
                         <h4 className="mb-0 fw-bold text-nowrap">{formatCOP(filteredSales.length > 0 ? (totalRevenue / filteredSales.length) : 0)}</h4>
