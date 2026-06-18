@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 const OrderManagement = () => {
     const [orders, setOrders] = useState([]);
@@ -276,88 +277,86 @@ const OrderManagement = () => {
             </div>
 
             {/* Order Details Modal */}
-            {selectedOrder && (
-                <>
-                    <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
-                        <div className="modal-dialog modal-lg modal-dialog-centered">
-                            <div className="modal-content glass-panel border-0 shadow-lg">
-                                <div className="modal-header border-bottom border-secondary-subtle">
-                                    <h5 className="modal-title fw-bold">Detalles del Pedido #{selectedOrder.id}</h5>
-                                    <button
-                                        type="button"
-                                        className="btn-close"
-                                        onClick={() => setSelectedOrder(null)}
-                                    ></button>
+            {selectedOrder && createPortal(
+                <div className="modal fade show" style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1055 }} tabIndex="-1" onClick={() => setSelectedOrder(null)}>
+                    <div className="modal-dialog modal-lg w-100" style={{ margin: '0 auto' }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-content glass-panel border-0 shadow-lg">
+                            <div className="modal-header border-bottom border-secondary-subtle">
+                                <h5 className="modal-title fw-bold">Detalles del Pedido #{selectedOrder.id}</h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setSelectedOrder(null)}
+                                ></button>
+                            </div>
+                            <div className="modal-body p-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                                <div className="row mb-4">
+                                    <div className="col-md-6">
+                                        <p className="mb-1 text-muted small">Cliente</p>
+                                        <p className="fw-medium">{selectedOrder.usuario?.email}</p>
+                                        <p className="mb-1 text-muted small">Fecha</p>
+                                        <p className="fw-medium">{new Date(selectedOrder.fecha).toLocaleString()}</p>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <p className="mb-1 text-muted small">Estado</p>
+                                        <p><span className={`badge ${getStatusBadgeClass(selectedOrder.estado)}`}>{selectedOrder.estado}</span></p>
+                                        <p className="mb-1 text-muted small">Dirección</p>
+                                        <p className="fw-medium">{selectedOrder.direccion || 'No especificada'}</p>
+                                    </div>
                                 </div>
-                                <div className="modal-body p-4">
-                                    <div className="row mb-4">
-                                        <div className="col-md-6">
-                                            <p className="mb-1 text-muted small">Cliente</p>
-                                            <p className="fw-medium">{selectedOrder.usuario?.email}</p>
-                                            <p className="mb-1 text-muted small">Fecha</p>
-                                            <p className="fw-medium">{new Date(selectedOrder.fecha).toLocaleString()}</p>
-                                        </div>
-                                        <div className="col-md-6">
-                                            <p className="mb-1 text-muted small">Estado</p>
-                                            <p><span className={`badge ${getStatusBadgeClass(selectedOrder.estado)}`}>{selectedOrder.estado}</span></p>
-                                            <p className="mb-1 text-muted small">Dirección</p>
-                                            <p className="fw-medium">{selectedOrder.direccion || 'No especificada'}</p>
+
+                                {selectedOrder.observaciones && (
+                                    <div className="alert alert-info d-flex align-items-center">
+                                        <i className="bi bi-info-circle-fill me-2"></i>
+                                        <div>
+                                            <strong>Notas:</strong> {selectedOrder.observaciones}
                                         </div>
                                     </div>
+                                )}
 
-                                    {selectedOrder.observaciones && (
-                                        <div className="alert alert-info d-flex align-items-center">
-                                            <i className="bi bi-info-circle-fill me-2"></i>
-                                            <div>
-                                                <strong>Notas:</strong> {selectedOrder.observaciones}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <h6 className="mt-4 mb-3 fw-bold">Productos</h6>
-                                    <div className="table-responsive rounded-3 border">
-                                        <table className="table table-sm mb-0">
-                                            <thead className="bg-light">
-                                                <tr>
-                                                    <th className="px-3 py-2">Producto</th>
-                                                    <th className="px-3 py-2 text-center">Cant.</th>
-                                                    <th className="px-3 py-2 text-end">Precio Unit.</th>
-                                                    <th className="px-3 py-2 text-end">Subtotal</th>
+                                <h6 className="mt-4 mb-3 fw-bold">Productos</h6>
+                                <div className="table-responsive rounded-3 border">
+                                    <table className="table table-sm mb-0">
+                                        <thead className="bg-light">
+                                            <tr>
+                                                <th className="px-3 py-2">Producto</th>
+                                                <th className="px-3 py-2 text-center">Cant.</th>
+                                                <th className="px-3 py-2 text-end">Precio Unit.</th>
+                                                <th className="px-3 py-2 text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selectedOrder.detalles?.map((detalle, index) => (
+                                                <tr key={index}>
+                                                    <td className="px-3 py-2">{detalle.producto?.nombreProducto || 'Producto no disponible'}</td>
+                                                    <td className="px-3 py-2 text-center">{detalle.cantidad}</td>
+                                                    <td className="px-3 py-2 text-end">{formatCOP(detalle.precioUnitario)}</td>
+                                                    <td className="px-3 py-2 text-end">{formatCOP(detalle.subtotal)}</td>
                                                 </tr>
-                                            </thead>
-                                            <tbody>
-                                                {selectedOrder.detalles?.map((detalle, index) => (
-                                                    <tr key={index}>
-                                                        <td className="px-3 py-2">{detalle.producto?.nombreProducto || 'Producto no disponible'}</td>
-                                                        <td className="px-3 py-2 text-center">{detalle.cantidad}</td>
-                                                        <td className="px-3 py-2 text-end">{formatCOP(detalle.precioUnitario)}</td>
-                                                        <td className="px-3 py-2 text-end">{formatCOP(detalle.subtotal)}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div className="d-flex justify-content-end mt-3">
-                                        <div className="text-end">
-                                            <small className="text-muted d-block">Total del Pedido</small>
-                                            <span className="h4 fw-bold text-primary">{formatCOP(selectedOrder.totalVenta)}</span>
-                                        </div>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="d-flex justify-content-end mt-3">
+                                    <div className="text-end">
+                                        <small className="text-muted d-block">Total del Pedido</small>
+                                        <span className="h4 fw-bold text-primary">{formatCOP(selectedOrder.totalVenta)}</span>
                                     </div>
                                 </div>
-                                <div className="modal-footer border-top border-secondary-subtle">
-                                    <button
-                                        type="button"
-                                        className="btn btn-secondary"
-                                        onClick={() => setSelectedOrder(null)}
-                                    >
-                                        Cerrar
-                                    </button>
-                                </div>
+                            </div>
+                            <div className="modal-footer border-top border-secondary-subtle">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={() => setSelectedOrder(null)}
+                                >
+                                    Cerrar
+                                </button>
                             </div>
                         </div>
                     </div>
-                    <div className="modal-backdrop fade show" style={{ backdropFilter: 'blur(5px)' }}></div>
-                </>
+                </div>,
+                document.body
             )}
         </div>
     );

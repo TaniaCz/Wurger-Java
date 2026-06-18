@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 const PromotionsManagement = () => {
     const [promotions, setPromotions] = useState([]);
@@ -326,166 +327,164 @@ const PromotionsManagement = () => {
             </div>
 
             {/* Compact Modal - No Scroll Required */}
-            {showModal && (
-                <>
-                    <div className="modal-backdrop fade show"></div>
-                    <div className="modal fade show d-block" tabIndex="-1" aria-modal="true" role="dialog">
-                        <div className="modal-dialog modal-dialog-centered modal-lg">
-                            <div className="modal-content glass-panel border-0 shadow-lg">
-                                <div className="modal-header border-bottom border-secondary-subtle py-3">
-                                    <h5 className="modal-title fw-bold">
-                                        {editingPromo ? 'Editar Promoción' : 'Nueva Promoción'}
-                                    </h5>
-                                    <button
-                                        type="button"
-                                        className="btn-close"
-                                        onClick={() => setShowModal(false)}
-                                    ></button>
-                                </div>
-                                <form onSubmit={handleSubmit}>
-                                    <div className="modal-body py-3 px-4">
-                                        <div className="row g-2">
-                                            {/* Row 1: Nombre y Producto */}
-                                            <div className="col-md-6">
-                                                <label className="form-label small text-muted mb-1">
-                                                    Nombre <span className="text-danger">*</span>
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    className={`form-control form-control-sm ${errors.nombre ? 'is-invalid' : ''}`}
-                                                    value={formData.nombre}
-                                                    onChange={e => handleFieldChange('nombre', e.target.value)}
-                                                    placeholder="Ej: Promo Verano 2024"
-                                                />
-                                                {errors.nombre && <div className="invalid-feedback small">{errors.nombre}</div>}
-                                            </div>
+            {showModal && createPortal(
+                <div className="modal show d-block" tabIndex="-1" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(5px)', zIndex: 1055 }}>
+                    <div className="modal-dialog modal-dialog-centered m-0" style={{ width: '100%', maxWidth: '800px' }}>
+                        <div className="modal-content glass-panel border-0 shadow-lg">
+                            <div className="modal-header border-bottom border-secondary-subtle py-3">
+                                <h5 className="modal-title fw-bold">
+                                    {editingPromo ? 'Editar Promoción' : 'Nueva Promoción'}
+                                </h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setShowModal(false)}
+                                ></button>
+                            </div>
+                            <form onSubmit={handleSubmit}>
+                                <div className="modal-body py-3 px-4">
+                                    <div className="row g-2">
+                                        {/* Row 1: Nombre y Producto */}
+                                        <div className="col-md-6">
+                                            <label className="form-label small text-muted mb-1">
+                                                Nombre <span className="text-danger">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className={`form-control form-control-sm ${errors.nombre ? 'is-invalid' : ''}`}
+                                                value={formData.nombre}
+                                                onChange={e => handleFieldChange('nombre', e.target.value)}
+                                                placeholder="Ej: Promo Verano 2024"
+                                            />
+                                            {errors.nombre && <div className="invalid-feedback small">{errors.nombre}</div>}
+                                        </div>
 
-                                            <div className="col-md-6">
-                                                <label className="form-label small text-muted mb-1">
-                                                    Producto <span className="text-danger">*</span>
-                                                </label>
-                                                <select
-                                                    className={`form-select form-select-sm ${errors.idProducto ? 'is-invalid' : ''}`}
-                                                    value={formData.idProducto}
-                                                    onChange={e => handleFieldChange('idProducto', e.target.value)}
-                                                >
-                                                    <option value="">Seleccionar producto...</option>
-                                                    {products.map(p => (
-                                                        <option key={p.id} value={p.id}>
-                                                            {p.nombreProducto} - {formatCOP(p.precioVenta)}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {errors.idProducto && <div className="invalid-feedback small">{errors.idProducto}</div>}
-                                            </div>
+                                        <div className="col-md-6">
+                                            <label className="form-label small text-muted mb-1">
+                                                Producto <span className="text-danger">*</span>
+                                            </label>
+                                            <select
+                                                className={`form-select form-select-sm ${errors.idProducto ? 'is-invalid' : ''}`}
+                                                value={formData.idProducto}
+                                                onChange={e => handleFieldChange('idProducto', e.target.value)}
+                                            >
+                                                <option value="">Seleccionar producto...</option>
+                                                {products.map(p => (
+                                                    <option key={p.id} value={p.id}>
+                                                        {p.nombreProducto} - {formatCOP(p.precioVenta)}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {errors.idProducto && <div className="invalid-feedback small">{errors.idProducto}</div>}
+                                        </div>
 
-                                            {/* Row 2: Tipo Descuento y Valor */}
-                                            <div className="col-md-6">
-                                                <label className="form-label small text-muted mb-1">
-                                                    Tipo Descuento <span className="text-danger">*</span>
-                                                </label>
-                                                <select
-                                                    className="form-select form-select-sm"
-                                                    value={formData.tipoDescuento}
-                                                    onChange={e => handleFieldChange('tipoDescuento', e.target.value)}
-                                                >
-                                                    <option value="PORCENTAJE">Porcentaje (%)</option>
-                                                    <option value="FIJO">Monto Fijo ($)</option>
-                                                </select>
-                                            </div>
+                                        {/* Row 2: Tipo Descuento y Valor */}
+                                        <div className="col-md-6">
+                                            <label className="form-label small text-muted mb-1">
+                                                Tipo Descuento <span className="text-danger">*</span>
+                                            </label>
+                                            <select
+                                                className="form-select form-select-sm"
+                                                value={formData.tipoDescuento}
+                                                onChange={e => handleFieldChange('tipoDescuento', e.target.value)}
+                                            >
+                                                <option value="PORCENTAJE">Porcentaje (%)</option>
+                                                <option value="FIJO">Monto Fijo ($)</option>
+                                            </select>
+                                        </div>
 
-                                            <div className="col-md-6">
-                                                <label className="form-label small text-muted mb-1">
-                                                    Valor Descuento <span className="text-danger">*</span>
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    className={`form-control form-control-sm ${errors.descuento ? 'is-invalid' : ''}`}
-                                                    min="0"
-                                                    step={formData.tipoDescuento === 'PORCENTAJE' ? '1' : '100'}
-                                                    max={formData.tipoDescuento === 'PORCENTAJE' ? '100' : undefined}
-                                                    value={formData.descuento}
-                                                    onChange={e => handleFieldChange('descuento', e.target.value)}
-                                                    placeholder={formData.tipoDescuento === 'PORCENTAJE' ? '20' : '5000'}
-                                                />
-                                                {errors.descuento && <div className="invalid-feedback small">{errors.descuento}</div>}
-                                            </div>
+                                        <div className="col-md-6">
+                                            <label className="form-label small text-muted mb-1">
+                                                Valor Descuento <span className="text-danger">*</span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                className={`form-control form-control-sm ${errors.descuento ? 'is-invalid' : ''}`}
+                                                min="0"
+                                                step={formData.tipoDescuento === 'PORCENTAJE' ? '1' : '100'}
+                                                max={formData.tipoDescuento === 'PORCENTAJE' ? '100' : undefined}
+                                                value={formData.descuento}
+                                                onChange={e => handleFieldChange('descuento', e.target.value)}
+                                                placeholder={formData.tipoDescuento === 'PORCENTAJE' ? '20' : '5000'}
+                                            />
+                                            {errors.descuento && <div className="invalid-feedback small">{errors.descuento}</div>}
+                                        </div>
 
-                                            {/* Row 3: Fechas */}
-                                            <div className="col-md-6">
-                                                <label className="form-label small text-muted mb-1">
-                                                    Fecha Inicio <span className="text-danger">*</span>
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    className={`form-control form-control-sm ${errors.inicio ? 'is-invalid' : ''}`}
-                                                    min={getTodayDate()}
-                                                    value={formData.inicio}
-                                                    onChange={e => handleFieldChange('inicio', e.target.value)}
-                                                />
-                                                {errors.inicio && <div className="invalid-feedback small">{errors.inicio}</div>}
-                                            </div>
+                                        {/* Row 3: Fechas */}
+                                        <div className="col-md-6">
+                                            <label className="form-label small text-muted mb-1">
+                                                Fecha Inicio <span className="text-danger">*</span>
+                                            </label>
+                                            <input
+                                                type="date"
+                                                className={`form-control form-control-sm ${errors.inicio ? 'is-invalid' : ''}`}
+                                                min={getTodayDate()}
+                                                value={formData.inicio}
+                                                onChange={e => handleFieldChange('inicio', e.target.value)}
+                                            />
+                                            {errors.inicio && <div className="invalid-feedback small">{errors.inicio}</div>}
+                                        </div>
 
-                                            <div className="col-md-6">
-                                                <label className="form-label small text-muted mb-1">
-                                                    Fecha Fin <span className="text-danger">*</span>
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    className={`form-control form-control-sm ${errors.fin ? 'is-invalid' : ''}`}
-                                                    min={formData.inicio || getTodayDate()}
-                                                    value={formData.fin}
-                                                    onChange={e => handleFieldChange('fin', e.target.value)}
-                                                />
-                                                {errors.fin && <div className="invalid-feedback small">{errors.fin}</div>}
-                                            </div>
+                                        <div className="col-md-6">
+                                            <label className="form-label small text-muted mb-1">
+                                                Fecha Fin <span className="text-danger">*</span>
+                                            </label>
+                                            <input
+                                                type="date"
+                                                className={`form-control form-control-sm ${errors.fin ? 'is-invalid' : ''}`}
+                                                min={formData.inicio || getTodayDate()}
+                                                value={formData.fin}
+                                                onChange={e => handleFieldChange('fin', e.target.value)}
+                                            />
+                                            {errors.fin && <div className="invalid-feedback small">{errors.fin}</div>}
+                                        </div>
 
-                                            {/* Row 4: Descripción */}
-                                            <div className="col-12">
-                                                <label className="form-label small text-muted mb-1">Descripción</label>
-                                                <textarea
-                                                    className="form-control form-control-sm"
-                                                    rows="2"
-                                                    value={formData.descripcion}
-                                                    onChange={e => handleFieldChange('descripcion', e.target.value)}
-                                                    placeholder="Descripción opcional"
-                                                    maxLength="255"
-                                                ></textarea>
-                                                <small className="text-muted" style={{ fontSize: '0.7rem' }}>{formData.descripcion.length}/255</small>
-                                            </div>
+                                        {/* Row 4: Descripción */}
+                                        <div className="col-12">
+                                            <label className="form-label small text-muted mb-1">Descripción</label>
+                                            <textarea
+                                                className="form-control form-control-sm"
+                                                rows="2"
+                                                value={formData.descripcion}
+                                                onChange={e => handleFieldChange('descripcion', e.target.value)}
+                                                placeholder="Descripción opcional"
+                                                maxLength="255"
+                                            ></textarea>
+                                            <small className="text-muted" style={{ fontSize: '0.7rem' }}>{formData.descripcion.length}/255</small>
+                                        </div>
 
-                                            {/* Row 5: Estado */}
-                                            <div className="col-md-6">
-                                                <label className="form-label small text-muted mb-1">Estado</label>
-                                                <select
-                                                    className="form-select form-select-sm"
-                                                    value={formData.estado}
-                                                    onChange={e => handleFieldChange('estado', e.target.value)}
-                                                >
-                                                    <option value="Activa">Activa</option>
-                                                    <option value="Inactiva">Inactiva</option>
-                                                </select>
-                                            </div>
+                                        {/* Row 5: Estado */}
+                                        <div className="col-md-6">
+                                            <label className="form-label small text-muted mb-1">Estado</label>
+                                            <select
+                                                className="form-select form-select-sm"
+                                                value={formData.estado}
+                                                onChange={e => handleFieldChange('estado', e.target.value)}
+                                            >
+                                                <option value="Activa">Activa</option>
+                                                <option value="Inactiva">Inactiva</option>
+                                            </select>
                                         </div>
                                     </div>
-                                    <div className="modal-footer border-top border-secondary-subtle py-2">
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary btn-sm"
-                                            onClick={() => setShowModal(false)}
-                                        >
-                                            Cancelar
-                                        </button>
-                                        <button type="submit" className="btn btn-primary btn-sm px-4">
-                                            <i className="bi bi-check-lg me-1"></i>
-                                            Guardar
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                                </div>
+                                <div className="modal-footer border-top border-secondary-subtle py-2">
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => setShowModal(false)}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" className="btn btn-primary btn-sm px-4">
+                                        <i className="bi bi-check-lg me-1"></i>
+                                        Guardar
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                </>
+                </div>,
+                document.body
             )}
         </div>
     );

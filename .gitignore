@@ -73,3 +73,6 @@ wurger_backup*.sql
 ### Logs ###
 *.log
 logs/
+
+### User Uploads ###
+uploads/

@@ -11,6 +11,7 @@ const Register = () => {
     });
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -82,6 +83,9 @@ const Register = () => {
             return;
         }
 
+        setError('');
+        setLoading(true);
+
         try {
             const response = await fetch('http://localhost:8080/api/auth/register', {
                 method: 'POST',
@@ -92,143 +96,224 @@ const Register = () => {
             });
 
             if (response.ok) {
+                alert('¡Registro exitoso! Por favor inicia sesión.');
                 navigate('/');
             } else {
                 const text = await response.text();
                 setError(text || 'Error en el registro');
             }
         } catch (error) {
-            setError('Error de conexión');
+            setError('Error de conexión con el servidor');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="login-container" style={{
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundImage: 'url(/login_background.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            position: 'relative'
-        }}>
-            {/* Dark overlay */}
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.6)'
+        <div className="d-flex align-items-center justify-content-center min-vh-100 py-5 position-relative" style={{ overflow: 'hidden' }}>
+            {/* Appetizing Background Image WITHOUT Blur */}
+            <div className="position-absolute w-100 h-100" style={{
+                backgroundImage: 'url(/bg_burger.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed',
+                filter: 'brightness(0.6)',
+                transform: 'scale(1.02)',
+                zIndex: 0
             }}></div>
 
-            <div className="card shadow-lg" style={{
-                maxWidth: '500px',
-                width: '100%',
-                margin: '20px',
-                borderRadius: '20px',
+            <div className="card border-0 m-3 w-100 shadow-lg" style={{ 
+                maxWidth: '480px', 
+                zIndex: 10,
+                background: 'rgba(15, 20, 25, 0.85)',
+                backdropFilter: 'blur(12px)',
+                borderRadius: '24px',
                 overflow: 'hidden',
-                position: 'relative',
-                zIndex: 1,
-                backgroundColor: 'rgba(30, 30, 30, 0.85)',
-                border: '1px solid rgba(255,255,255,0.1)'
+                border: '1px solid rgba(255,255,255,0.05)'
             }}>
-                <div className="card-body p-5">
-                    <div className="text-center mb-4">
+                <div className="card-body p-4 p-sm-5 position-relative">
+                    {/* Top Decorative Accent */}
+                    <div className="position-absolute top-0 start-0 w-100" style={{ height: '6px', background: 'var(--primary-gradient)' }}></div>
+
+                    {/* Brand / Title */}
+                    <div className="text-center mb-4 mt-2">
                         <img
                             src="/logo.png"
                             alt="Wurger Logo"
-                            style={{ height: '60px', marginBottom: '10px' }}
+                            className="mb-3 hover-scale"
+                            style={{ height: '60px', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }}
                         />
-                        <h2 className="text-white mb-4">Registro</h2>
+                        <h3 className="fw-bold mb-1 text-white">Crear Cuenta</h3>
+                        <p className="text-light opacity-75 small">Únete y disfruta de las mejores hamburguesas</p>
                     </div>
 
-                    {error && <div className="alert alert-danger">{error}</div>}
+                    {error && (
+                        <div className="alert border-0 text-white bg-danger bg-opacity-25 rounded-3 mb-4 py-3 px-3 d-flex align-items-center gap-2 animate-fade-in" role="alert">
+                            <i className="bi bi-exclamation-octagon-fill fs-5 text-danger"></i>
+                            <span className="small fw-semibold">{error}</span>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit}>
+                        {/* Name Input */}
                         <div className="mb-3">
-                            <label className="form-label text-white">Nombre Completo</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                name="nombre"
-                                value={formData.nombre}
-                                onChange={handleChange}
-                                required
-                            />
+                            <label className="form-label small fw-bold text-light mb-2">Nombre Completo</label>
+                            <div className="input-group shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <span className="input-group-text bg-dark border-0 text-primary">
+                                    <i className="bi bi-person-fill"></i>
+                                </span>
+                                <input
+                                    type="text"
+                                    className="form-control bg-dark text-white border-0 ps-0"
+                                    name="nombre"
+                                    value={formData.nombre}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="Juan Pérez"
+                                    style={{ boxShadow: 'none' }}
+                                />
+                            </div>
                         </div>
+
+                        {/* Email Input */}
                         <div className="mb-3">
-                            <label className="form-label text-white">Email</label>
-                            <input
-                                type="email"
-                                className="form-control"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                required
-                            />
+                            <label className="form-label small fw-bold text-light mb-2">Email</label>
+                            <div className="input-group shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <span className="input-group-text bg-dark border-0 text-primary">
+                                    <i className="bi bi-envelope-fill"></i>
+                                </span>
+                                <input
+                                    type="email"
+                                    className="form-control bg-dark text-white border-0 ps-0"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="ejemplo@correo.com"
+                                    style={{ boxShadow: 'none' }}
+                                />
+                            </div>
                         </div>
+
+                        {/* Password Input */}
                         <div className="mb-3">
-                            <label className="form-label text-white">Contraseña</label>
-                            <div className="input-group">
+                            <label className="form-label small fw-bold text-light mb-2">Contraseña</label>
+                            <div className="input-group shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <span className="input-group-text bg-dark border-0 text-primary">
+                                    <i className="bi bi-lock-fill"></i>
+                                </span>
                                 <input
                                     type={showPassword ? "text" : "password"}
-                                    className="form-control"
+                                    className="form-control bg-dark text-white border-0 px-0"
                                     name="password"
                                     value={formData.password}
                                     onChange={handleChange}
                                     required
+                                    placeholder="Mínimo 8 caracteres"
+                                    style={{ boxShadow: 'none' }}
                                 />
                                 <button
-                                    className="btn btn-outline-secondary"
+                                    className="btn bg-dark border-0 text-light opacity-75"
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white' }}
                                 >
-                                    {showPassword ? '' : ''}
+                                    <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
                                 </button>
                             </div>
+
+                            {/* Password Strength Bar */}
                             {formData.password && (
-                                <div className="mt-2">
-                                    <div className="progress" style={{ height: '5px' }}>
+                                <div className="mt-2 animate-fade-in">
+                                    <div className="progress bg-dark" style={{ height: '6px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                         <div
                                             className={`progress-bar ${getStrengthColor(getPasswordStrength(formData.password))}`}
                                             role="progressbar"
-                                            style={{ width: `${(getPasswordStrength(formData.password) / 4) * 100}%` }}
+                                            style={{
+                                                width: `${(getPasswordStrength(formData.password) / 4) * 100}%`,
+                                                transition: 'width 0.4s ease'
+                                            }}
                                         ></div>
                                     </div>
-                                    <small className="text-white-50">{getStrengthText(getPasswordStrength(formData.password))}</small>
+                                    <div className="d-flex justify-content-between mt-1">
+                                        <small className="text-light opacity-75" style={{ fontSize: '0.75rem' }}>Seguridad de contraseña</small>
+                                        <small className={`fw-bold text-uppercase`} style={{
+                                            fontSize: '0.75rem',
+                                            color: getPasswordStrength(formData.password) < 3 ? 'var(--danger-color)' : getPasswordStrength(formData.password) === 3 ? 'var(--warning-color)' : 'var(--success-color)'
+                                        }}>
+                                            {getStrengthText(getPasswordStrength(formData.password))}
+                                        </small>
+                                    </div>
                                 </div>
                             )}
                         </div>
+
+                        {/* Telephone Input */}
                         <div className="mb-3">
-                            <label className="form-label text-white">Teléfono</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                name="telefono"
-                                value={formData.telefono}
-                                onChange={handleChange}
-                                required
-                            />
+                            <label className="form-label small fw-bold text-light mb-2">Teléfono</label>
+                            <div className="input-group shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <span className="input-group-text bg-dark border-0 text-primary">
+                                    <i className="bi bi-telephone-fill"></i>
+                                </span>
+                                <input
+                                    type="text"
+                                    className="form-control bg-dark text-white border-0 ps-0"
+                                    name="telefono"
+                                    value={formData.telefono}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="3001234567"
+                                    maxLength="10"
+                                    style={{ boxShadow: 'none' }}
+                                />
+                            </div>
                         </div>
-                        <div className="mb-3">
-                            <label className="form-label text-white">Dirección</label>
-                            <textarea
-                                className="form-control"
-                                name="direccion"
-                                value={formData.direccion}
-                                onChange={handleChange}
-                                required
-                            />
+
+                        {/* Address Input */}
+                        <div className="mb-4">
+                            <label className="form-label small fw-bold text-light mb-2">Dirección</label>
+                            <div className="input-group shadow-sm" style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <span className="input-group-text bg-dark border-0 text-primary">
+                                    <i className="bi bi-geo-alt-fill"></i>
+                                </span>
+                                <textarea
+                                    className="form-control bg-dark text-white border-0 ps-0"
+                                    name="direccion"
+                                    value={formData.direccion}
+                                    onChange={handleChange}
+                                    required
+                                    rows="2"
+                                    placeholder="Calle 123 # 45-67, Barrio"
+                                    style={{ boxShadow: 'none' }}
+                                />
+                            </div>
                         </div>
-                        <button type="submit" className="btn btn-primary w-100 py-2 fw-bold">
-                            Registrarse
+
+                        {/* Submit Button */}
+                        <button
+                            type="submit"
+                            className="btn btn-primary btn-lg w-100 mb-4 shadow-sm d-flex align-items-center justify-content-center gap-2"
+                            style={{ borderRadius: '12px', padding: '12px' }}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            ) : (
+                                <>
+                                    <span className="fw-bold text-white">Registrarse</span>
+                                    <i className="bi bi-person-plus-fill text-white"></i>
+                                </>
+                            )}
                         </button>
                     </form>
-                    <div className="mt-3 text-center">
-                        <p className="text-white-50">¿Ya tienes cuenta? <Link to="/" className="text-primary text-decoration-none fw-bold">Inicia Sesión</Link></p>
+
+                    {/* Login Link */}
+                    <div className="text-center">
+                        <p className="text-light opacity-75 small mb-0 fw-medium">
+                            ¿Ya tienes cuenta?{' '}
+                            <Link to="/" className="fw-bold text-decoration-none hover-scale" style={{ color: 'var(--primary-color)' }}>
+                                Inicia Sesión
+                            </Link>
+                        </p>
                     </div>
                 </div>
             </div>

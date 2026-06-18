@@ -9,8 +9,6 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-green.svg)](https://spring.io/projects/spring-boot)
 [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-orange.svg)](https://www.mysql.com/)
-[![Laravel](https://img.shields.io/badge/Laravel-10.x-red.svg)](https://laravel.com/)
-
 </div>
 
 ---

@@ -37,6 +37,9 @@ public class Venta {
     @Column(length = 500)
     private String direccion;
 
+    @Column(name = "id_caja_sesion")
+    private Integer idCajaSesion;
+
     @ManyToOne
     @JoinColumn(name = "id_usuario", nullable = false)
     private Usuario usuario;

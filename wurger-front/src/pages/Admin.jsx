@@ -7,6 +7,9 @@ import StockAlerts from '../components/admin/StockAlerts';
 import Reports from '../components/admin/Reports';
 import UserManagement from '../components/admin/UserManagement';
 import PromotionsManagement from '../components/admin/PromotionsManagement';
+import ExpensesManagement from '../components/admin/ExpensesManagement';
+import CashRegister from '../components/admin/CashRegister';
+import EmailCampaigns from '../components/admin/EmailCampaigns';
 
 function Admin() {
     const navigate = useNavigate();
@@ -40,10 +43,13 @@ function Admin() {
         switch (activeView) {
             case 'products': return <ProductManagement />;
             case 'orders': return <OrderManagement />;
+            case 'caja': return <CashRegister />;
+            case 'expenses': return <ExpensesManagement />;
             case 'stock': return <StockAlerts />;
             case 'reports': return <Reports />;
             case 'users': return <UserManagement />;
             case 'promotions': return <PromotionsManagement />;
+            case 'campaigns': return <EmailCampaigns />;
             default: return <ProductManagement />;
         }
     };
@@ -51,10 +57,13 @@ function Admin() {
     const menuItems = [
         { id: 'products', icon: 'bi-box-seam', label: 'Productos' },
         { id: 'orders', icon: 'bi-cart', label: 'Pedidos' },
+        { id: 'caja', icon: 'bi-cash-coin', label: 'Caja POS' },
+        { id: 'expenses', icon: 'bi-wallet2', label: 'Gastos' },
         { id: 'stock', icon: 'bi-exclamation-triangle', label: 'Stock' },
         { id: 'reports', icon: 'bi-bar-chart', label: 'Reportes' },
         { id: 'users', icon: 'bi-people', label: 'Usuarios' },
         { id: 'promotions', icon: 'bi-tag', label: 'Promociones' },
+        { id: 'campaigns', icon: 'bi-envelope-paper', label: 'Campañas Correo' },
     ];
 
     return (
