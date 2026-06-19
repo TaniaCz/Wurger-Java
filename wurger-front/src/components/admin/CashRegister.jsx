@@ -831,7 +831,7 @@ const CashRegister = () => {
             {/* SIMULACIÓN DE RECIBO / FACTURA MODAL */}
             {receiptOrder && createPortal(
                 <div className="modal show d-block" tabIndex="-1" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', zIndex: 1100 }}>
-                    <div className="modal-dialog modal-dialog-centered m-0" style={{ maxWidth: '380px', width: '100%' }}>
+                    <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '380px', width: '100%' }}>
                         <div className="modal-content border-0 rounded-4" style={{ backgroundColor: '#fff', color: '#000', fontFamily: 'monospace' }}>
                             <div className="modal-body p-4 position-relative">
                                 {/* Decoración de bordes de ticket */}

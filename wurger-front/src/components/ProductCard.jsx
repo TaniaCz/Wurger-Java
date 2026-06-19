@@ -51,7 +51,7 @@ const ProductCard = ({ product }) => {
                         </h5>
                         <p className="text-muted small text-truncate mb-0" style={{ fontSize: '0.8rem' }}>
                             {product.stock > 0 ? (
-                                <span className="text-success"><i className="bi bi-check2-circle me-1"></i>Disponible ({product.stock})</span>
+                                <span className="text-success"><i className="bi bi-check2-circle me-1"></i>Disponible</span>
                             ) : (
                                 <span className="text-danger"><i className="bi bi-x-circle me-1"></i>Agotado</span>
                             )}

@@ -114,6 +114,26 @@ const Reports = () => {
         }, 0);
     };
 
+    const getPosRevenue = () => {
+        return getFilteredSales().reduce((sum, sale) => {
+            if (sale.idCajaSesion != null) {
+                const val = parseFloat(sale.totalVenta || sale.total);
+                return sum + (isNaN(val) ? 0 : val);
+            }
+            return sum;
+        }, 0);
+    };
+
+    const getOnlineRevenue = () => {
+        return getFilteredSales().reduce((sum, sale) => {
+            if (sale.idCajaSesion == null) {
+                const val = parseFloat(sale.totalVenta || sale.total);
+                return sum + (isNaN(val) ? 0 : val);
+            }
+            return sum;
+        }, 0);
+    };
+
     const getBestSellingProducts = () => {
         const productSales = {};
         const filtered = getFilteredSales();
@@ -185,10 +205,10 @@ const Reports = () => {
             doc.text(`Período: ${dateRange.start} a ${dateRange.end}`, 15, 35);
 
             doc.setFillColor(245, 245, 245);
-            doc.rect(15, 45, 180, 32, 'F');
+            doc.rect(15, 45, 180, 35, 'F');
             doc.setFontSize(11);
             doc.setTextColor(40, 40, 40);
-            doc.text(`Total Ventas: ${formatCOP(getTotalRevenue())}`, 20, 52);
+            doc.text(`Total Ventas: ${formatCOP(getTotalRevenue())} (Caja: ${formatCOP(getPosRevenue())} | Online: ${formatCOP(getOnlineRevenue())})`, 20, 52);
             doc.text(`Total Gastos: ${formatCOP(getTotalExpenses())}`, 20, 58);
             doc.text(`Utilidad Neta: ${formatCOP(getTotalRevenue() - getTotalExpenses())}`, 20, 64);
             doc.text(`Número de Pedidos: ${getFilteredSales().length}`, 20, 70);
@@ -292,7 +312,7 @@ const Reports = () => {
 
             worksheet.getCell('A9').value = 'Total Ventas:';
             worksheet.getCell('A9').font = { bold: true };
-            worksheet.getCell('B9').value = formatCOP(getTotalRevenue());
+            worksheet.getCell('B9').value = `${formatCOP(getTotalRevenue())} (Caja: ${formatCOP(getPosRevenue())} / Online: ${formatCOP(getOnlineRevenue())})`;
 
             worksheet.getCell('A10').value = 'Total Gastos:';
             worksheet.getCell('A10').font = { bold: true };
@@ -698,6 +718,12 @@ const Reports = () => {
                     <div className="glass-card h-100 p-4 text-white bg-primary bg-gradient" style={{ '--glass-bg': 'rgba(255,255,255,0.1)' }}>
                         <h6 className="mb-2 opacity-75 small text-uppercase fw-bold">Total Ventas</h6>
                         <h4 className="mb-0 fw-bold text-nowrap">{formatCOP(totalRevenue)}</h4>
+                        <div className="mt-2 small opacity-90 fw-medium d-flex align-items-center gap-1">
+                            <i className="bi bi-cash-register"></i> Caja: {formatCOP(getPosRevenue())}
+                        </div>
+                        <div className="small opacity-90 fw-medium d-flex align-items-center gap-1">
+                            <i className="bi bi-globe"></i> Online: {formatCOP(getOnlineRevenue())}
+                        </div>
                     </div>
                 </div>
                 <div className="col-sm-6 col-xl">

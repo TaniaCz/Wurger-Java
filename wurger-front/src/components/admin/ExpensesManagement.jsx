@@ -363,7 +363,7 @@ const ExpensesManagement = () => {
             {/* Create/Edit Modal */}
             {showModal && createPortal(
                 <div className="modal show d-block" tabIndex="-1" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(5px)', zIndex: 1055 }}>
-                    <div className="modal-dialog modal-dialog-centered m-0" style={{ width: '100%', maxWidth: '500px' }}>
+                    <div className="modal-dialog modal-dialog-centered" style={{ width: '100%', maxWidth: '500px' }}>
                         <div className="modal-content glass-panel border-0 rounded-4">
                             <div className="modal-header border-bottom border-secondary-subtle">
                                 <h5 className="modal-title fw-bold">

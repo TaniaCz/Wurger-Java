@@ -22,10 +22,9 @@ const Dashboard = ({ onNavigate }) => {
         setLoading(true);
         try {
             // Fetch all data concurrently
-            const [ventasRes, gastosRes, pedidosRes, stockRes, cajaRes] = await Promise.allSettled([
+            const [ventasRes, gastosRes, stockRes, cajaRes] = await Promise.allSettled([
                 fetch('http://localhost:8080/api/ventas'),
                 fetch('http://localhost:8080/api/gastos'),
-                fetch('http://localhost:8080/api/pedidos'),
                 fetch('http://localhost:8080/api/productos'),
                 fetch('http://localhost:8080/api/caja/activa'),
             ]);
@@ -36,13 +35,15 @@ const Dashboard = ({ onNavigate }) => {
             let ventasHoy = 0, ventasSemana = 0, gastosHoy = 0;
             let pedidosPendientes = 0, productosStockBajo = 0, totalProductos = 0;
 
+            let ventasList = [];
             // Ventas
             if (ventasRes.status === 'fulfilled' && ventasRes.value.ok) {
                 const ventas = await ventasRes.value.json();
+                ventasList = ventas;
                 ventas.forEach(v => {
                     const fecha = v.fecha ? v.fecha.split('T')[0] : '';
-                    if (fecha === today) ventasHoy += v.total || 0;
-                    if (fecha >= weekAgo) ventasSemana += v.total || 0;
+                    if (fecha === today) ventasHoy += v.totalVenta || 0;
+                    if (fecha >= weekAgo) ventasSemana += v.totalVenta || 0;
                 });
                 setRecentOrders(ventas.slice(-5).reverse());
             }
@@ -56,11 +57,8 @@ const Dashboard = ({ onNavigate }) => {
                 });
             }
 
-            // Pedidos
-            if (pedidosRes.status === 'fulfilled' && pedidosRes.value.ok) {
-                const pedidos = await pedidosRes.value.json();
-                pedidosPendientes = pedidos.filter(p => p.estado === 'PENDIENTE' || p.estado === 'EN_PREPARACION').length;
-            }
+            // Pedidos Pendientes (calculated from sales matching OrderManagement.jsx)
+            pedidosPendientes = ventasList.filter(v => v.estado === 'Pendiente' || v.estado === 'EnProceso').length;
 
             // Stock
             if (stockRes.status === 'fulfilled' && stockRes.value.ok) {
@@ -85,8 +83,16 @@ const Dashboard = ({ onNavigate }) => {
         }
     };
 
-    const fmtCurrency = (val) =>
-        new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(val);
+    const fmtCurrency = (val) => {
+        if (val === null || val === undefined || isNaN(val)) return '$ 0';
+        const price = val < 1000 ? val * 1000 : val;
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(price);
+    };
 
     const hora = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
     const fecha = new Date().toLocaleDateString('es-CR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -268,7 +274,7 @@ const Dashboard = ({ onNavigate }) => {
                                                 </td>
                                                 <td>
                                                     <span className="fw-bold" style={{ color: 'var(--primary-color)' }}>
-                                                        {fmtCurrency(v.total || 0)}
+                                                        {fmtCurrency(v.totalVenta || 0)}
                                                     </span>
                                                 </td>
                                                 <td>
@@ -334,7 +340,7 @@ const Dashboard = ({ onNavigate }) => {
                                                 textAlign: 'center',
                                             }}
                                         >
-                                            {p.stock === 0 ? 'AGOTADO' : `${p.stock} uds`}
+                                            {p.stock === 0 ? 'AGOTADO' : 'STOCK BAJO'}
                                         </span>
                                     </div>
                                 ))}
