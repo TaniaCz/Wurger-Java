@@ -22,6 +22,7 @@ const CashRegister = () => {
     const [changeDue, setChangeDue] = useState(0);
     const [orderNotes, setOrderNotes] = useState('');
     const [receiptOrder, setReceiptOrder] = useState(null); // Para modal de factura
+    const [promotions, setPromotions] = useState([]);
 
     // Form inputs for opening/closing
     const [montoApertura, setMontoApertura] = useState('');
@@ -35,6 +36,7 @@ const CashRegister = () => {
         }
         checkActiveCaja();
         fetchProducts();
+        fetchPromotions();
     }, []);
 
     useEffect(() => {
@@ -100,6 +102,46 @@ const CashRegister = () => {
         } catch (error) {
             console.error("Error fetching products:", error);
         }
+    };
+
+    const fetchPromotions = async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/promociones');
+            if (response.ok) {
+                const data = await response.json();
+                const now = new Date();
+                const activePromos = data.filter(p => {
+                    const startDate = new Date(p.inicio + 'T00:00:00');
+                    const endDate = new Date(p.fin + 'T23:59:59');
+                    const isActive = p.estado === 'Activa';
+                    const isInDateRange = now >= startDate && now <= endDate;
+                    return isActive && isInDateRange;
+                });
+                setPromotions(activePromos);
+            }
+        } catch (error) {
+            console.error("Error fetching promotions:", error);
+        }
+    };
+
+    const getProductWithDiscount = (product) => {
+        const promo = promotions.find(p => p.producto?.id === product.id);
+        if (promo) {
+            let discountedPrice = product.precioVenta;
+            if (promo.tipoDescuento === 'PORCENTAJE') {
+                discountedPrice = product.precioVenta * (1 - promo.descuento / 100);
+            } else {
+                discountedPrice = Math.max(0, product.precioVenta - promo.descuento);
+            }
+            return {
+                ...product,
+                precioVenta: discountedPrice,
+                precioOriginal: product.precioVenta,
+                promoName: promo.nombre,
+                promoId: promo.id
+            };
+        }
+        return product;
     };
 
     const handleOpenCaja = async (e) => {
@@ -186,6 +228,8 @@ const CashRegister = () => {
             return;
         }
 
+        const productWithPromo = getProductWithDiscount(product);
+
         if (existingItem) {
             setCart(cart.map(item => 
                 item.id === product.id 
@@ -194,12 +238,15 @@ const CashRegister = () => {
             ));
         } else {
             setCart([...cart, {
-                id: product.id,
-                nombre: product.nombreProducto,
-                precio: product.precioVenta,
-                imagen: product.imagen,
+                id: productWithPromo.id,
+                nombre: productWithPromo.nombreProducto,
+                precio: productWithPromo.precioVenta,
+                originalPrice: productWithPromo.precioOriginal || productWithPromo.precioVenta,
+                promoId: productWithPromo.promoId || null,
+                promoName: productWithPromo.promoName || null,
+                imagen: productWithPromo.imagen,
                 quantity: 1,
-                stock: product.stock
+                stock: productWithPromo.stock
             }]);
         }
     };
@@ -270,11 +317,18 @@ const CashRegister = () => {
             observaciones: `Cliente: ${customerName} | ${orderNotes}`,
             idCajaSesion: activeCaja.id,
             formaPago: paymentMethod,
-            detalles: cart.map(item => ({
-                idProducto: item.id,
-                cantidad: item.quantity,
-                descuento: 0
-            }))
+            detalles: cart.map(item => {
+                const discountPerUnit = item.originalPrice ? (item.originalPrice - item.precio) : 0;
+                const detalle = {
+                    idProducto: item.id,
+                    cantidad: item.quantity,
+                    descuento: discountPerUnit * item.quantity
+                };
+                if (item.promoId) {
+                    detalle.idPromocion = item.promoId;
+                }
+                return detalle;
+            })
         };
 
         try {
@@ -472,36 +526,58 @@ const CashRegister = () => {
                             </div>
                         ) : (
                             <div className="row g-3">
-                                {filteredProducts.map(p => (
-                                    <div key={p.id} className="col-md-6 col-xl-4 col-xxl-3">
-                                        <div 
-                                            className="glass-card h-100 overflow-hidden d-flex flex-column hover-scale"
-                                            onClick={() => addToCart(p)}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <div className="position-relative" style={{ height: '120px' }}>
-                                                <img
-                                                    src={p.imagen || 'https://placehold.co/400x300?text=Wurger'}
-                                                    className="w-100 h-100 object-fit-cover"
-                                                    alt={p.nombreProducto}
-                                                    onError={(e) => {
-                                                        e.target.src = 'https://placehold.co/400x300?text=Wurger';
-                                                    }}
-                                                />
-                                                <span className={`position-absolute bottom-0 end-0 m-2 badge ${p.stock > 5 ? 'bg-success' : 'bg-danger'}`}>
-                                                    Stock: {p.stock}
-                                                </span>
-                                            </div>
-                                            <div className="p-3 d-flex flex-column flex-grow-1">
-                                                <h6 className="fw-bold mb-1 text-truncate">{p.nombreProducto}</h6>
-                                                <small className="text-muted d-block mb-2">{p.categoria?.nombreCategoria}</small>
-                                                <div className="mt-auto fw-bold text-primary fs-5">
-                                                    {formatCOP(p.precioVenta)}
+                                {filteredProducts.map(prod => {
+                                    const p = getProductWithDiscount(prod);
+                                    const hasPromo = p.promoId !== undefined && p.promoId !== null;
+                                    return (
+                                        <div key={p.id} className="col-md-6 col-xl-4 col-xxl-3">
+                                            <div 
+                                                className="glass-card h-100 overflow-hidden d-flex flex-column hover-scale"
+                                                onClick={() => addToCart(prod)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <div className="position-relative" style={{ height: '120px' }}>
+                                                    <img
+                                                        src={p.imagen || 'https://placehold.co/400x300?text=Wurger'}
+                                                        className="w-100 h-100 object-fit-cover"
+                                                        alt={p.nombreProducto}
+                                                        onError={(e) => {
+                                                            e.target.src = 'https://placehold.co/400x300?text=Wurger';
+                                                        }}
+                                                    />
+                                                    {hasPromo && (
+                                                        <span className="position-absolute top-0 start-0 m-2 badge bg-warning text-dark fw-bold shadow-sm">
+                                                            {p.promoName}
+                                                        </span>
+                                                    )}
+                                                    <span className={`position-absolute bottom-0 end-0 m-2 badge ${p.stock > 5 ? 'bg-success' : 'bg-danger'}`}>
+                                                        Stock: {p.stock}
+                                                    </span>
+                                                </div>
+                                                <div className="p-3 d-flex flex-column flex-grow-1">
+                                                    <h6 className="fw-bold mb-1 text-truncate">{p.nombreProducto}</h6>
+                                                    <small className="text-muted d-block mb-2">{p.categoria?.nombreCategoria}</small>
+                                                    <div className="mt-auto">
+                                                        {hasPromo ? (
+                                                            <div className="d-flex align-items-baseline gap-2">
+                                                                <span className="fw-bold text-danger fs-5">
+                                                                    {formatCOP(p.precioVenta)}
+                                                                </span>
+                                                                <span className="text-decoration-line-through text-muted small">
+                                                                    {formatCOP(p.precioOriginal)}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="fw-bold text-primary fs-5">
+                                                                {formatCOP(p.precioVenta)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -528,8 +604,24 @@ const CashRegister = () => {
                                         {cart.map(item => (
                                             <div key={item.id} className="list-group-item d-flex justify-content-between align-items-center px-0 py-2 bg-transparent border-bottom border-secondary-subtle">
                                                 <div className="overflow-hidden me-2" style={{ maxWidth: '160px' }}>
-                                                    <span className="fw-bold d-block text-truncate" style={{ fontSize: '0.9rem' }}>{item.nombre}</span>
-                                                    <small className="text-muted">{formatCOP(item.precio)} c/u</small>
+                                                    <span className="fw-bold d-block text-truncate" style={{ fontSize: '0.9rem' }}>
+                                                        {item.nombre}
+                                                        {item.promoName && (
+                                                            <span className="badge bg-warning text-dark ms-1" style={{ fontSize: '0.65rem' }}>
+                                                                {item.promoName}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    <small className="text-muted">
+                                                        {item.originalPrice && item.originalPrice !== item.precio ? (
+                                                            <>
+                                                                <span className="text-decoration-line-through text-muted me-1 small">{formatCOP(item.originalPrice)}</span>
+                                                                <span className="text-danger fw-semibold">{formatCOP(item.precio)}</span>
+                                                            </>
+                                                        ) : (
+                                                            `${formatCOP(item.precio)}`
+                                                        )} c/u
+                                                    </small>
                                                 </div>
                                                 <div className="d-flex align-items-center gap-2">
                                                     <div className="input-group input-group-sm" style={{ width: '80px' }}>
@@ -777,11 +869,17 @@ const CashRegister = () => {
                                     {receiptOrder.detalles.map((item, idx) => (
                                         <div key={idx} className="mb-1">
                                             <div className="d-flex justify-content-between">
-                                                <span>{item.nombre}</span>
+                                                <span>
+                                                    {item.nombre}
+                                                    {item.promoName && ` (${item.promoName})`}
+                                                </span>
                                                 <span>{formatCOP(item.precio * item.quantity)}</span>
                                             </div>
                                             <div className="text-muted" style={{ fontSize: '0.7rem' }}>
                                                 {item.quantity} x {formatCOP(item.precio)}
+                                                {item.originalPrice && item.originalPrice !== item.precio && (
+                                                    <span className="text-muted ms-1 text-decoration-line-through">({formatCOP(item.originalPrice)})</span>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
