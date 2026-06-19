@@ -199,6 +199,104 @@ public class EmailService {
     }
 
     // =====================================================================
+    // CORREO DE CAMPAÑA PROMOCIONAL
+    // =====================================================================
+    public void enviarCorreoCampana(String destinatario, String nombre, String asunto, String titulo, String mensaje, String descuentoText, String productoPromo, String imagenProducto) {
+        String promoBox = "";
+        if (descuentoText != null && !descuentoText.isEmpty()) {
+            String productSection = "";
+            if (productoPromo != null && !productoPromo.isEmpty()) {
+                String imgHtml = "";
+                if (imagenProducto != null && !imagenProducto.isEmpty()) {
+                    imgHtml = "<div style='margin-top: 12px;'><img src='" + imagenProducto + "' alt='" + productoPromo + "' style='max-width: 200px; border-radius: 12px; border: 1px solid #ddd; object-fit: cover;' /></div>";
+                }
+                productSection = "<div style='margin-top: 16px; font-weight: 700; color: #1a1a1a;'>" +
+                                 "Aplica para: <strong style='color:#FF9F1C;'>" + productoPromo + "</strong>" +
+                                 "</div>" + imgHtml;
+            }
+            
+            promoBox = """
+                <div style="background: #fff8f0; border: 2px dashed #FF9F1C; border-radius: 16px; padding: 24px; text-align: center; margin: 32px 0;">
+                    <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #FF6B35; font-weight: 800; margin-bottom: 8px;">🔥 DESCUENTO ESPECIAL 🔥</div>
+                    <div style="font-size: 36px; font-weight: 900; color: #FF6B35; margin-bottom: 8px;">%s</div>
+                    %s
+                </div>
+            """.formatted(descuentoText, productSection);
+        }
+
+        String html = """
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>%s</title>
+            </head>
+            <body style="margin:0; padding:0; font-family: 'Segoe UI', Arial, sans-serif; background-color:#f0f0f0;">
+              <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f0f0f0; padding: 40px 0;">
+                <tr>
+                  <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:16px; overflow:hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.12);">
+                      
+                      <!-- HEADER -->
+                      <tr>
+                        <td style="background: linear-gradient(135deg, #FF9F1C 0%%, #FF6B35 100%%); padding: 48px 40px; text-align: center;">
+                          <h1 style="color:#ffffff; font-size:42px; margin:0; font-weight:900; letter-spacing:-1px;">🍔 WURGER</h1>
+                          <p style="color:rgba(255,255,255,0.85); font-size:16px; margin:8px 0 0 0; font-weight:500;">¡Sabor insuperable a tu alcance!</p>
+                        </td>
+                      </tr>
+                      
+                      <!-- BODY -->
+                      <tr>
+                        <td style="padding: 48px 40px;">
+                          <h2 style="color:#1a1a1a; font-size:28px; margin: 0 0 16px 0; font-weight:800;">¡Hola, %s! 👋</h2>
+                          <h3 style="color:#FF6B35; font-size:20px; margin: 0 0 16px 0; font-weight:700;">%s</h3>
+                          <p style="color:#555; font-size:16px; line-height:1.7; margin: 0 0 24px 0;">
+                            %s
+                          </p>
+                          
+                          %s
+                          
+                          <!-- CTA BUTTON -->
+                          <div style="text-align: center; margin: 32px 0;">
+                            <a href="http://localhost:5173/login" 
+                               style="background: linear-gradient(135deg, #FF9F1C 0%%, #FF6B35 100%%); 
+                                      color: white; 
+                                      text-decoration: none; 
+                                      padding: 16px 40px; 
+                                      border-radius: 50px; 
+                                      font-size: 17px; 
+                                      font-weight: 700;
+                                      display: inline-block;
+                                      box-shadow: 0 4px 20px rgba(255,107,53,0.4);">
+                              🍔 Ordenar Ahora
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                      
+                      <!-- FOOTER -->
+                      <tr>
+                        <td style="background:#1a1a1a; padding: 24px 40px; text-align: center;">
+                          <p style="color:#888; font-size:13px; margin:0; line-height:1.6;">
+                            Recibiste este correo porque estás registrado en Wurger Restaurant.<br>
+                            © 2026 Wurger. Todos los derechos reservados.
+                          </p>
+                        </td>
+                      </tr>
+                      
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+            """.formatted(asunto, nombre, titulo, mensaje, promoBox);
+
+        enviarHtml(destinatario, asunto, html);
+    }
+
+    // =====================================================================
     // MÉTODO AUXILIAR PARA ENVIAR HTML
     // =====================================================================
     private void enviarHtml(String destinatario, String asunto, String html) {

@@ -1,5 +1,6 @@
 package com.Wurger.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,9 @@ import java.util.UUID;
 @RequestMapping("/api/upload")
 @CrossOrigin(origins = "*") // Permite al frontend acceder
 public class UploadController {
+
+    @Value("${app.upload.base-url:http://localhost:8080}")
+    private String uploadBaseUrl;
 
     // Directorio donde se guardarán las imágenes
     private static final String UPLOAD_DIR = "uploads/";
@@ -49,8 +53,8 @@ public class UploadController {
             Path filePath = Paths.get(UPLOAD_DIR + newFileName);
             Files.write(filePath, file.getBytes());
 
-            // Devolver la URL pública asumiendo que Spring Boot está en http://localhost:8080
-            String publicUrl = "http://localhost:8080/uploads/" + newFileName;
+            // Devolver la URL pública usando el base-url configurado
+            String publicUrl = uploadBaseUrl + "/uploads/" + newFileName;
             response.put("url", publicUrl);
             return new ResponseEntity<>(response, HttpStatus.OK);
 
