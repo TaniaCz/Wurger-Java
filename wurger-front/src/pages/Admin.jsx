@@ -82,11 +82,18 @@ function Admin() {
                         </div>
                     </div>
 
-                    <nav className="nav nav-pills flex-column gap-2 mb-auto">
+                    <nav 
+                        className="nav nav-pills flex-column gap-1 mb-auto pe-1" 
+                        style={{ 
+                            overflowY: 'auto', 
+                            maxHeight: 'calc(100vh - 280px)', 
+                            scrollbarWidth: 'thin' 
+                        }}
+                    >
                         {menuItems.map(item => (
                             <button
                                 key={item.id}
-                                className={`nav-link w-100 text-start d-flex align-items-center p-3 rounded-3 transition-all ${activeView === item.id ? 'active shadow-sm' : 'text-body'}`}
+                                className={`nav-link w-100 text-start d-flex align-items-center py-2.5 px-3 rounded-3 transition-all ${activeView === item.id ? 'active shadow-sm' : 'text-body'}`}
                                 onClick={() => setActiveView(item.id)}
                                 style={{
                                     background: activeView === item.id ? 'var(--primary-color)' : 'transparent',
