@@ -15,7 +15,6 @@ const ClientDashboard = () => {
     const [orderNotes, setOrderNotes] = useState('');
     const [addressError, setAddressError] = useState('');
     const [currentSlide, setCurrentSlide] = useState(0);
-
     const [coverageStatus, setCoverageStatus] = useState('unchecked'); // 'unchecked', 'loading', 'valid', 'invalid'
     const [coverageMessage, setCoverageMessage] = useState('Verifica tu dirección para comprobar la cobertura de domicilios.');
     const mapRef = useRef(null);
