@@ -126,7 +126,7 @@ public class VentaService {
     }
 
     public List<Venta> findByUsuarioId(Integer usuarioId) {
-        return ventaRepository.findByUsuarioId(usuarioId);
+        return ventaRepository.findByUsuarioIdAndIdCajaSesionIsNull(usuarioId);
     }
 
     @Transactional

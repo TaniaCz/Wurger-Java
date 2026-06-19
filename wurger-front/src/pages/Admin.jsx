@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import Dashboard from '../components/admin/Dashboard';
 import ProductManagement from '../components/admin/ProductManagement';
 import OrderManagement from '../components/admin/OrderManagement';
 import StockAlerts from '../components/admin/StockAlerts';
@@ -14,7 +15,7 @@ import EmailCampaigns from '../components/admin/EmailCampaigns';
 function Admin() {
     const navigate = useNavigate();
     const { theme, toggleTheme } = useTheme();
-    const [activeView, setActiveView] = useState('products');
+    const [activeView, setActiveView] = useState('dashboard');
 
     // Prevent back button after logout
     useEffect(() => {
@@ -41,6 +42,7 @@ function Admin() {
 
     const renderView = () => {
         switch (activeView) {
+            case 'dashboard': return <Dashboard onNavigate={setActiveView} />;
             case 'products': return <ProductManagement />;
             case 'orders': return <OrderManagement />;
             case 'caja': return <CashRegister />;
@@ -50,11 +52,12 @@ function Admin() {
             case 'users': return <UserManagement />;
             case 'promotions': return <PromotionsManagement />;
             case 'campaigns': return <EmailCampaigns />;
-            default: return <ProductManagement />;
+            default: return <Dashboard onNavigate={setActiveView} />;
         }
     };
 
     const menuItems = [
+        { id: 'dashboard', icon: 'bi-speedometer2', label: 'Panel Principal' },
         { id: 'products', icon: 'bi-box-seam', label: 'Productos' },
         { id: 'orders', icon: 'bi-cart', label: 'Pedidos' },
         { id: 'caja', icon: 'bi-cash-coin', label: 'Caja POS' },

@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface VentaRepository extends JpaRepository<Venta, Integer> {
-    java.util.List<Venta> findByUsuarioId(Integer usuarioId);
+    java.util.List<Venta> findByUsuarioIdAndIdCajaSesionIsNull(Integer usuarioId);
     java.util.List<Venta> findByIdCajaSesion(Integer idCajaSesion);
 }
